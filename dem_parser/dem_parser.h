@@ -37,11 +37,10 @@
 
 
 typedef struct chunk_t {
-    double lat, lon;        // Latitude, Longitude in degrees.
     ThreeVector ECEF;       // Cartesian Coordinates, with reference to ECEF.
     ThreeVector local;
 
-    double elevation;
+    float elevation;
 
     double r,az,el;         // Spherical Coordinates w.r.t. radar transmitter.
     double surfaceDistance; // Distance along the surface.
@@ -66,7 +65,9 @@ private:
     static constexpr double deltaDistance = 30;
    
     void calculateSecondaryParameters();
-	
+
+    void calculateLatLon(int x, int y, float* lat, float* lon);
+    	
     // Grazing Angle Calculations
     double calculateDirectionalDerivative(double* h, double az);
     void calculateTerrainSlope();

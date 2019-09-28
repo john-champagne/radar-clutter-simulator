@@ -4,9 +4,6 @@
 
 #define sind(x) (sin(fmod((x),360) * M_PI / 180))
 #define cosd(x) (cos(fmod((x),360) * M_PI / 180))
-void printProg(const char* desc, int i, int max){
-    printf("%s:%f\n", desc, double(i)/double(max)*100);
-}
 
 /** ElevationReader::populateMap
  * DESCRIPTION:
@@ -30,43 +27,13 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
     mapOriginX = mapSizeX/2;
     mapOriginY = mapSizeY/2;
 
-    for (int i = 0; i < mapSizeX; i++) {
-        double latTemp = lat;
-        double lonTemp = lon;
-
-        double walkAzimuth = 0;
-        if (i != mapOriginX) {
-            if (i < mapOriginX)
-                walkAzimuth = 90;
-            else if (i > mapOriginX)
-                walkAzimuth = 270;
-            ER.WalkDistance(   lat, lon, walkAzimuth, fabs(i-mapOriginX)*deltaDistance,
-                            &latTemp, &lonTemp);
-        }
+    for (int i = 0; i < mapSizeX; i++)
         for (int j = 0; j < mapSizeY; j++) {
-            double latTemp2 = latTemp;
-            double lonTemp2 = lonTemp;
-            double walkAzimuth = 0;
-            if (j != mapOriginY){
-                if (j < mapOriginY)
-                    walkAzimuth = 180;
-                else if (j > mapOriginY)
-                    walkAzimuth = 0;
-            }
-            ER.WalkDistance (   latTemp, 
-                                lonTemp, 
-                                walkAzimuth,
-                                fabs(j-mapOriginY)*deltaDistance,
-                                &latTemp2, 
-                                &lonTemp2 
-                            );
-            map[i][j].elevation = ER.GetElevation(latTemp2, lonTemp2);
-            map[i][j].lat = latTemp2;
-            map[i][j].lon = lonTemp2;
-            map[i][j].shadowed = 0;
-            
+            float lat2, lon2;
+            calculateLatLon(i, j, &lat2, &lon2);
+            map[i][j].elevation = ER.GetElevation(lat2, lon2);
         };
-    }
+
     origin = calculateECEF(originLat, originLon, originHeight);
    
     // x-axis reference
@@ -84,6 +51,50 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
     calculateTerrainSlope();
     calculateGrazingAngle();
     map[mapOriginX][mapOriginY].el = 0;
+}
+
+/** ElevationReader::calculateLatLon
+ * DESCRIPTION:
+ *      Calculates the latitude and longitude for a specific element on the map. 
+ * ARGUMENTS:
+ *      int x, y
+ *          The element of the map. 
+ *      float* lat, lon
+ *          Pointers to the latitude and longitude. These will be overwritten. 
+ */
+void ElevationMap::calculateLatLon(int x, int y, float* lat, float* lon) {
+    float latTemp = originLat;
+    float lonTemp = originLon;
+
+    double walkAzimuth = 0;
+    if (x != mapOriginX) {
+        if (x < mapOriginX)
+            walkAzimuth = 90;
+        else if (x > mapOriginX)
+            walkAzimuth = 270;
+        ER.WalkDistance(    originLat, 
+                            originLon, 
+                            walkAzimuth, 
+                            fabs(x-mapOriginX)*deltaDistance,
+                            &latTemp, 
+                            &lonTemp );
+    }
+
+    float latTemp2 = latTemp;
+    float lonTemp2 = lonTemp;
+    double walkAzimuth = 0;
+    if (y != mapOriginY) {
+        if (y < mapOriginY)
+            walkAzimuth = 180;
+        else if (y > mapOriginY)
+            walkAzimuth = 0;
+    }
+    ER.WalkDistance (   latTemp, 
+                        lonTemp, 
+                        walkAzimuth,
+                        fabs(y-mapOriginY)*deltaDistance,
+                        lat, 
+                        lon );
 }
 
 
