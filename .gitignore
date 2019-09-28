@@ -1,4 +1,5 @@
 *.exe
 *.csv
+*.swp
 srtm/*
 test
