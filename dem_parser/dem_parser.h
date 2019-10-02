@@ -77,6 +77,11 @@ private:
     void allocateMap();
     void deallocateMap();
     void deallocateElevation();
+    
+    // Shared memory for multithreading.
+    unsigned int threadCount; = std::thread::hardware_concurrency();
+    int alloc_i;
+    int elevation_i;
 public:
     int mapSizeX, mapSizeY;
     void populateMap(double lat, double lon, double radius, double height);
