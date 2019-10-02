@@ -37,24 +37,19 @@
 
 
 typedef struct chunk_t {
-    ThreeVector ECEF;       // Cartesian Coordinates, with reference to ECEF.
-    ThreeVector local;
-
-    float elevation;
-
-    double r,az,el;         // Spherical Coordinates w.r.t. radar transmitter.
-    double surfaceDistance; // Distance along the surface.
-    int shadowed;
-    double terrain;         // Terrain Slope Angle.
-    double grazing;         // Grazing Angle.
-
+    float r,az,el;         // Spherical Coordinates w.r.t. radar transmitter.
+    uint8_t shadowed;
+    float grazing;         // Grazing Angle.
 } chunk_t;
 
 
 class ElevationMap {
 private:
+    ElevationReader ER;
+    
     chunk_t** map;
-
+    float** elevation_map;
+    
     int mapOriginX, mapOriginY;
     
 
@@ -67,9 +62,11 @@ private:
     void calculateSecondaryParameters();
 
     void calculateLatLon(int x, int y, float* lat, float* lon);
+    void calculateSphericalCoordinates(int x, int y, float* az, float* el, float* r);
+    void populateSphericalCoordinates(int start, int end);
     	
     // Grazing Angle Calculations
-    double calculateDirectionalDerivative(double* h, double az);
+    double calculateDirectionalDerivative(float* h, float az);
     void calculateTerrainSlope();
     void calculateGrazingAngle();
     
@@ -79,6 +76,7 @@ private:
      
     void allocateMap();
     void deallocateMap();
+    void deallocateElevation();
 public:
     int mapSizeX, mapSizeY;
     void populateMap(double lat, double lon, double radius, double height);

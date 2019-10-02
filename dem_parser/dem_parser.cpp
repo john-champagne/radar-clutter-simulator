@@ -2,6 +2,10 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include <thread>
+#include <chrono>
+#include <iostream>
+
 #define sind(x) (sin(fmod((x),360) * M_PI / 180))
 #define cosd(x) (cos(fmod((x),360) * M_PI / 180))
 
@@ -15,8 +19,6 @@
  *          The radius from the origin to populate in meters.
  */
 void ElevationMap::populateMap(double lat, double lon, double radius, double height){
-    ElevationReader ER;
-    
     originLat = lat;
     originLon = lon;
     originHeight = ER.GetElevation(lat,lon) + height;
@@ -26,14 +28,7 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
     allocateMap();
     mapOriginX = mapSizeX/2;
     mapOriginY = mapSizeY/2;
-
-    for (int i = 0; i < mapSizeX; i++)
-        for (int j = 0; j < mapSizeY; j++) {
-            float lat2, lon2;
-            calculateLatLon(i, j, &lat2, &lon2);
-            map[i][j].elevation = ER.GetElevation(lat2, lon2);
-        };
-
+    
     origin = calculateECEF(originLat, originLon, originHeight);
    
     // x-axis reference
@@ -45,11 +40,30 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
     
     for (int i = 0; i < 3; i++)
         axis[i] = axis[i].normalize();
-
-    calculateSecondaryParameters();
-    calculateShadowing();
-    calculateTerrainSlope();
-    calculateGrazingAngle();
+    
+    for (int i = 0; i < mapSizeX; i++)
+        for (int j = 0; j < mapSizeY; j++) {
+            float lat2, lon2;
+            calculateLatLon(i, j, &lat2, &lon2);
+            elevation_map[i][j] = ER.GetElevation(lat2, lon2);
+        };
+   
+    // Populate the azimuth, elevation, and range of the map using multithreading. 
+    unsigned int threadCount = std::thread::hardware_concurrency();
+    std::thread threads[threadCount];
+    float mapDelta = float(mapSizeX-1)/float(threadCount);
+    threads[0] = std::thread(&ElevationMap::populateSphericalCoordinates,this, 0, int(mapDelta));
+    for (int i = 1; i < threadCount; i++)
+        threads[i] = std::thread(   &ElevationMap::populateSphericalCoordinates,this, 
+                                    int(mapDelta*i)+1,
+                                    int(mapDelta*(i+1))
+                                );
+    // Wait for all threads to finish running.
+    for (int i = 0; i < threadCount; i++)
+        threads[i].join();
+        
+    //calculateShadowing();
+    //calculateGrazingAngle();
     map[mapOriginX][mapOriginY].el = 0;
 }
 
@@ -63,8 +77,8 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
  *          Pointers to the latitude and longitude. These will be overwritten. 
  */
 void ElevationMap::calculateLatLon(int x, int y, float* lat, float* lon) {
-    float latTemp = originLat;
-    float lonTemp = originLon;
+    double latTemp = (double)originLat;
+    double lonTemp = (double)originLon;
 
     double walkAzimuth = 0;
     if (x != mapOriginX) {
@@ -72,54 +86,71 @@ void ElevationMap::calculateLatLon(int x, int y, float* lat, float* lon) {
             walkAzimuth = 90;
         else if (x > mapOriginX)
             walkAzimuth = 270;
-        ER.WalkDistance(    originLat, 
-                            originLon, 
+        ER.WalkDistance(    (double)originLat, 
+                            (double)originLon, 
                             walkAzimuth, 
-                            fabs(x-mapOriginX)*deltaDistance,
+                            (double)fabs(x-mapOriginX)*deltaDistance,
                             &latTemp, 
                             &lonTemp );
     }
 
-    float latTemp2 = latTemp;
-    float lonTemp2 = lonTemp;
-    double walkAzimuth = 0;
+    double latTemp2 = 0;
+    double lonTemp2 = 0;
+    walkAzimuth = 0;
     if (y != mapOriginY) {
         if (y < mapOriginY)
             walkAzimuth = 180;
         else if (y > mapOriginY)
             walkAzimuth = 0;
     }
-    ER.WalkDistance (   latTemp, 
-                        lonTemp, 
+    ER.WalkDistance (   (double)latTemp, 
+                        (double)lonTemp, 
                         walkAzimuth,
-                        fabs(y-mapOriginY)*deltaDistance,
-                        lat, 
-                        lon );
+                        (double)fabs(y-mapOriginY)*deltaDistance,
+                        &latTemp2, 
+                        &lonTemp2 );
+    *lat = (float)latTemp2;
+    *lon = (float)lonTemp2;
 }
 
-
-void ElevationMap::calculateSecondaryParameters() {
-    double a = ElevationReader::a;
-    double b = ElevationReader::b;
-	
-    for (int i = 0; i < mapSizeX; i++)
-        for (int j = 0; j < mapSizeY; j++) {
-            // Calculate ECEF coordinates.
-            // Equations come from:
-            // Wkipedia Geographic_coordinate_conversion#From_geodetic_to_ECEF_coordinates
-            map[i][j].ECEF = calculateECEF(map[i][j].lat, map[i][j].lon, map[i][j].elevation);
-		    map[i][j].local.x = (map[i][j].ECEF - origin).dot(axis[0]);
-            map[i][j].local.y = (map[i][j].ECEF - origin).dot(axis[1]);
-            map[i][j].local.z = (map[i][j].ECEF - origin).dot(axis[2]);
+/** ElevationReader::calculateSphericalCoordinates
+ * DESCRIPTION:
+ *      Calculates the azimuth, elevation, and range from the origin. 
+ * ARGUMENTS:
+ *      int x, y
+ *          The element of the map. 
+ *      float* az, el, r
+ *          Pointers to the azimuth angle, elevation angle, and range. 
+ */
+void ElevationMap::calculateSphericalCoordinates(int i, int j, float* az, float* el, float* r) {
+    float lat, lon;
+    calculateLatLon(i, j, &lat, &lon);
+    ThreeVector local = calculateECEF(lat, lon, elevation_map[i][j]);
     
-			// Calculate radius, elevation angle, and azimuth angle relative to the transmitter.
-			map[i][j].r  = sqrt(pow(map[i][j].local.x,2) + 
-                                pow(map[i][j].local.y,2) + 
-                                pow(map[i][j].local.z,2) );
-			map[i][j].el = atan2((  map[i][j].local.z) , 
-                                    sqrt(pow(map[i][j].local.x,2) + pow(map[i][j].local.y,2)));
-			map[i][j].az = atan2((map[i][j].local.x), (map[i][j].local.y));
-        }
+    float x,y,z;
+    x = (local - origin).dot(axis[0]);
+    y = (local - origin).dot(axis[1]);
+    z = (local - origin).dot(axis[2]);
+    // Calculate radius, elevation angle, and azimuth angle relative to the transmitter.
+    *r  = sqrt( pow(x,2) + 
+                pow(y,2) + 
+                pow(z,2) );
+    *el = atan2(z, sqrt(pow(x,2) + pow(y,2)));
+    *az = atan2(x, y);
+}
+
+/** ElevationReader::populateSphericalCoordinates
+ * DESCRIPTION:
+ *      Populates a partial section of the map with spherical coordinates.
+ *      Used to multithread the process.
+ * ARGUMENTS:
+ *      int start, end
+ *          The start and end points of the map. 
+ */
+void ElevationMap::populateSphericalCoordinates(int start, int end) {
+    for (int i = start; i <= end; i++)
+        for (int j = 0; j < mapSizeY; j++)
+            calculateSphericalCoordinates(i,j, &map[i][j].az, &map[i][j].el, &map[i][j].r);
 }
 
 /*  ElevationMap::allocateMap
@@ -130,6 +161,10 @@ void ElevationMap::allocateMap() {
     map = new chunk_t* [mapSizeX];
     for (int i = 0; i < mapSizeX; i++)
         map[i] = new chunk_t [mapSizeY];
+
+    elevation_map = new float* [mapSizeX];
+    for (int i = 0; i < mapSizeY; i++)
+        elevation_map[i] = new float [mapSizeY];
 }
 
 /*  ElevationMap::deallocateMap
@@ -142,6 +177,17 @@ void ElevationMap::deallocateMap(){
     delete [] map;
 }
 
+/** ElevationReader::deallocateElevation
+ * DESCRIPTION:
+ *      Deallocates the elevation map.
+ */
+void ElevationMap::deallocateElevation() {
+    for (int i = 0; i < mapSizeX; i++)
+        delete [] elevation_map[i];
+    delete [] elevation_map;
+}
+
+
 chunk_t ElevationMap::getMap(int x, int y) {
     return map[x][y];
 }
@@ -149,13 +195,13 @@ chunk_t ElevationMap::getMap(int x, int y) {
 #ifdef DEBUG_DEM_PARSER
 
 int main() {
-    ElevationMap E;
-    E.populateMap(38.52,-98.10,1000,0);
-    for (int i = 0; i < E.mapSizeX; i++)
-        for (int j = 0; j < E.mapSizeY; j++) {
-            chunk_t m = E.getMap(i,j);
-            printf("%f%c", m.r, (j == (E.mapSizeY - 1)) ? '\n' : ',');
-        } 
+    for (int i = 1; i < 2; i++) {
+        auto start = std::chrono::steady_clock::now();
+        ElevationMap E;
+        E.populateMap(38.52, -98.10, 264000,0);
+        auto end = std::chrono::steady_clock::now();
+        std::cout  << (end - start).count() << std::endl;
+    }
 }
 
 #endif

@@ -36,7 +36,7 @@ double inverseHeightMatrix[9][9] = {
  *      double
  *          The directional derivative.
  */
-double ElevationMap::calculateDirectionalDerivative(double* h, double az) {
+double ElevationMap::calculateDirectionalDerivative(float* h, float az) {
 	double b[9];
 	for (int i = 0; i < 9; i++) {
 		b[i] = 0;
@@ -68,59 +68,53 @@ double ElevationMap::calculateDirectionalDerivative(double* h, double az) {
 	return sin(az)*b[1] + cos(az)*b[3];
 }
 
-void ElevationMap::calculateTerrainSlope() {
+void ElevationMap::calculateGrazingAngle() {
     // Calculate the elevation slope on the map.
     for (int i = 1; i < mapSizeX - 1; i++) {
         for (int j = 1; j < mapSizeX - 1; j++) {
-            double h[9];
+            float h[9];
             for (int k = 0; k < 9; k++) 
-                h[k] = getMap(i + (k%3 - 1), j + (k/3 - 1)).elevation;
-            map[i][j].terrain = atan(calculateDirectionalDerivative((double*)h, map[i][j].az));
+                h[k] = elevation_map[i + (k%3 - 1)][j + (k/3 - 1)];
+            map[i][j].grazing = atan(   calculateDirectionalDerivative((float*)h, 
+                                        map[i][j].az)) - map[i][j].el;
         }
     }
     // Calculate the terrain slope on the edges using a simple moving average.
     for (int i = 1; i < mapSizeX - 1; i++){
-        map[i][0].terrain = 1.0/3.0 * ( map[i][1].terrain + 
-                                        map[i-1][1].terrain + 
-                                        map[i + 1][1].terrain );
-        map[i][mapSizeY-1].terrain = 1.0/3.0 * (    map[i][mapSizeY-2].terrain + 
-                                                    map[i-1][mapSizeY-2].terrain + 
-                                                    map[i + 1][mapSizeY-2].terrain );
-        map[0][i].terrain = 1.0/3.0 * ( map[1][i].terrain + 
-                                        map[1][i-1].terrain + 
-                                        map[1][i+1].terrain );
-        map[mapSizeX-1][i].terrain = 1.0/3.0 * (    map[mapSizeX-2][i].terrain + 
-                                                    map[mapSizeX-2][i+1].terrain + 
-                                                    map[mapSizeX-2][i-1].terrain );
+        map[i][0].grazing = 1.0/3.0 * ( map[i][1].grazing + 
+                                        map[i-1][1].grazing + 
+                                        map[i + 1][1].grazing );
+        map[i][mapSizeY-1].grazing = 1.0/3.0 * (    map[i][mapSizeY-2].grazing + 
+                                                    map[i-1][mapSizeY-2].grazing + 
+                                                    map[i + 1][mapSizeY-2].grazing );
+        map[0][i].grazing = 1.0/3.0 * ( map[1][i].grazing + 
+                                        map[1][i-1].grazing + 
+                                        map[1][i+1].grazing );
+        map[mapSizeX-1][i].grazing = 1.0/3.0 * (    map[mapSizeX-2][i].grazing + 
+                                                    map[mapSizeX-2][i+1].grazing + 
+                                                    map[mapSizeX-2][i-1].grazing );
         
 
     }
     // Calculate the terrain slope of the corners using SMA.
-    map[0][0].terrain = 1.0/3.0 * ( map[1][0].terrain + 
-                                    map[1][1].terrain + 
-                                    map[0][1].terrain
+    map[0][0].grazing = 1.0/3.0 * ( map[1][0].grazing + 
+                                    map[1][1].grazing + 
+                                    map[0][1].grazing
                                   );
 
-    map[mapSizeX-1][0].terrain = 1.0/3.0 * (    map[mapSizeX-2][0].terrain + 
-                                                map[mapSizeX-2][1].terrain + 
-                                                map[mapSizeX-1][1].terrain
+    map[mapSizeX-1][0].grazing = 1.0/3.0 * (    map[mapSizeX-2][0].grazing + 
+                                                map[mapSizeX-2][1].grazing + 
+                                                map[mapSizeX-1][1].grazing
                                             );
 
-    map[0][mapSizeY-1].terrain = 1.0/3.0 * (    map[0][mapSizeY-2].terrain + 
-                                                map[1][mapSizeY-2].terrain + 
-                                                map[1][mapSizeY-1].terrain
+    map[0][mapSizeY-1].grazing = 1.0/3.0 * (    map[0][mapSizeY-2].grazing + 
+                                                map[1][mapSizeY-2].grazing + 
+                                                map[1][mapSizeY-1].grazing
                                             );
-    map[mapSizeX-1][mapSizeY-1].terrain = 1.0/3.0 * (   map[mapSizeX-1][mapSizeY-2].terrain + 
-                                                        map[mapSizeX-2][mapSizeY-2].terrain + 
-                                                        map[mapSizeX-2][mapSizeY-1].terrain
+    map[mapSizeX-1][mapSizeY-1].grazing = 1.0/3.0 * (   map[mapSizeX-1][mapSizeY-2].grazing + 
+                                                        map[mapSizeX-2][mapSizeY-2].grazing + 
+                                                        map[mapSizeX-2][mapSizeY-1].grazing
                                             );
-}
-
-void ElevationMap::calculateGrazingAngle() {
-    for (int i = 0; i < mapSizeX; i++){
-        for (int j = 0; j < mapSizeY; j++)
-            map[i][j].grazing = map[i][j].terrain - map[i][j].el;
-    }
 }
 
 #ifdef DEBUG_TERRAIN_SLOPE 
