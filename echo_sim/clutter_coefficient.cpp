@@ -5,12 +5,12 @@ const float toDegree = 180.0 / M_PI;
 /** calculateClutterCoefficient
  * DESCRIPTION:
  *      Calculates the incremental clutter coefficient (also called the
- *		scattering coefficient).
- *		This function uses the interim clutter model based on the book:
- * 		Low-Angle Radar Land Clutter Measurements and Empirical Models
- *		J. Barrie Billingsley
- *		ISBN: 0852962304
- *		Chapter 4, page 295
+ *      scattering coefficient).
+ *      This function uses the interim clutter model based on the book:
+ *      Low-Angle Radar Land Clutter Measurements and Empirical Models
+ *      J. Barrie Billingsley
+ *      ISBN: 0852962304
+ *      Chapter 4, page 295
  * ARGUMENTS:
  *      double lat, lon
  *          The lattitude and longitude of the origin in degrees.
