@@ -19,7 +19,7 @@
  *          The radius from the origin to populate in meters.
  */
 void ElevationMap::populateMap(double lat, double lon, double radius, double height){
-    thisoriginLat = lat;
+    originLat = lat;
     originLon = lon;
     originHeight = ER.GetElevation(lat,lon) + height;
     
@@ -34,6 +34,7 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
     float mapDelta = float(mapSizeX-1)/float(threadCount);
     
     // Start allocating map.
+    alloc_i = 0;
     threads[0] = std::thread(&ElevationMap::allocateMap,this);
     
     
@@ -55,24 +56,25 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
         threads[0].join();
         // Populate map using single thread.
         populatePartial(0, mapSizeX);
-    else
+    }
+    else {
         // Break map into N-1 parts.
-        float mapDelta = float(mapSizeX-1)/float(threadCount - 1);
+        float mapDelta2 = float(mapSizeX-1)/float(threadCount - 1);
         
         // Use N-1 threads to populate elevation, azimuth, elevation, and radius.
-        threads[1] = std::thread(&ElevationMap::populatePartial, this, 0, int(mapDelta));
+        threads[1] = std::thread(&ElevationMap::populatePartial, this, 0, int(mapDelta2));
         for (int i = 2; i < threadCount; i++) 
-            threads[i] = std::thread(   &ElevationMap::populateSphericalCoordinates,this, 
-                                        int(mapDelta*i)+1,
-                                        int(mapDelta*(i+1))
+            threads[i] = std::thread(   &ElevationMap::populatePartial,this, 
+                                        int(mapDelta2*(i-1))+1,
+                                        int(mapDelta2*(i))
                                     );
         // Wait for threads to complete.
         for (int i = 0; i < threadCount; i++)
             threads[i].join();
     }
         
-    //calculateShadowing();
-    //calculateGrazingAngle();
+    calculateShadowing();
+    populateGrazingAngle();
     map[mapOriginX][mapOriginY].el = 0;
 }
 
@@ -131,8 +133,8 @@ void ElevationMap::calculateLatLon(int x, int y, float* lat, float* lon) {
  *      float* az, el, r
  *          Pointers to the azimuth angle, elevation angle, and range. 
  */
-void ElevationMap::calculateSphericalCoordinates(float lat, float lon, float* az, float* el, float* r) {
-    ThreeVector local = calculateECEF(lat, lon, elevation_map[i][j]);
+void ElevationMap::calculateSphericalCoordinates(float lat, float lon, float h, float* az, float* el, float* r) {
+    ThreeVector local = calculateECEF(lat, lon, h);
     
     float x,y,z;
     x = (local - origin).dot(axis[0]);
@@ -155,12 +157,14 @@ void ElevationMap::calculateSphericalCoordinates(float lat, float lon, float* az
  *          The start and end points of the map. 
  */
 void ElevationMap::populateSphericalCoordinates(int start, int end) {
-    for (int i = start; i <= end; i++)
-        for (int j = 0; j < mapSizeY; j++)
-            calculateSphericalCoordinates(i,j, &map[i][j].az, &map[i][j].el, &map[i][j].r);
+    //for (int i = start; i <= end; i++)
+        //for (int j = 0; j < mapSizeY; j++)
+            //calculateSphericalCoordinates(i,j, &map[i][j].az, &map[i][j].el, &map[i][j].r);
 }
 
 void ElevationMap::populatePartial(int start, int end) {
+    while (alloc_i < 1)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     for (int i = 0; i < mapSizeY; i++) {
         for (int j = start; j <= end; j++) {
             float lat, lon;
@@ -168,7 +172,12 @@ void ElevationMap::populatePartial(int start, int end) {
             // Load elevation of the point.
             elevation_map[i][j] = ER.GetElevation(lat, lon);
             // Calculate spherical coordinates.
-            calculateSphericalCoordinates(lat,lon, &map[i][j].az, &map[i][j].el, &map[i][j].r);
+            calculateSphericalCoordinates(  lat, 
+                                            lon, 
+                                            elevation_map[i][j], 
+                                            &map[i][j].az, 
+                                            &map[i][j].el, 
+                                            &map[i][j].r);
         }
         // Wait for the next column to be allocated before continuing.
         while (i >= alloc_i - 1)
@@ -183,9 +192,10 @@ void ElevationMap::populatePartial(int start, int end) {
 void ElevationMap::allocateMap() {
     map = new chunk_t* [mapSizeX];
     elevation_map = new float* [mapSizeX];
-    for (; alloc_i < mapSizeX; alloc_i++) {
+    for (alloc_i = 0; alloc_i < mapSizeX; ) {
         map[alloc_i] = new chunk_t [mapSizeY];
         elevation_map[alloc_i] = new float [mapSizeY];
+        alloc_i++;
     }
     alloc_i++;
 }
@@ -215,15 +225,21 @@ chunk_t ElevationMap::getMap(int x, int y) {
     return map[x][y];
 }
 
+
+ElevationMap::~ElevationMap(){
+    deallocateMap();
+    deallocateElevation();
+}
+
 #ifdef DEBUG_DEM_PARSER
 
 int main() {
-    for (int i = 1; i < 2; i++) {
+    for (int i = 1; i < 100; i++) {
         auto start = std::chrono::steady_clock::now();
         ElevationMap E;
-        E.populateMap(38.52, -98.10, 264000,0);
+        E.populateMap(38.52, -98.10, 100*i,0);
         auto end = std::chrono::steady_clock::now();
-        std::cout  << (end - start).count() << std::endl;
+        std::cout  << 100*i << "," << (end - start).count() << std::endl;
     }
 }
 

@@ -62,13 +62,14 @@ private:
     void calculateSecondaryParameters();
 
     void calculateLatLon(int x, int y, float* lat, float* lon);
-    void calculateSphericalCoordinates(int x, int y, float* az, float* el, float* r);
+    void calculateSphericalCoordinates(float lat, float lon,float h, float*az, float*el, float* r);
     void populateSphericalCoordinates(int start, int end);
-    	
+    void populatePartial(int start, int end);    	
     // Grazing Angle Calculations
     double calculateDirectionalDerivative(float* h, float az);
     void calculateTerrainSlope();
-    void calculateGrazingAngle();
+    void populateGrazingAngle();
+    void populateGrazingAnglePartial(int start, int end);
     
     // Shadowing Calculations
     void calculateShadowing();
@@ -79,7 +80,7 @@ private:
     void deallocateElevation();
     
     // Shared memory for multithreading.
-    unsigned int threadCount; = std::thread::hardware_concurrency();
+    unsigned int threadCount; 
     int alloc_i;
     int elevation_i;
 public:
@@ -89,6 +90,8 @@ public:
     // Accessor Functions
     chunk_t getMap(int x, int y);
     void setMap(int x, int y, chunk_t m);
+
+    ~ElevationMap();
 
 };
 

@@ -29,6 +29,7 @@ SOFTWARE.
 #ifndef ECHO_SIM_H
 #define ECHO_SIM_H
 #include <math.h>
+#include <mutex>
 #include "../dem_parser/elevation_reader.h"
 
 typedef struct AntennaPattern_t {
@@ -48,13 +49,17 @@ private:
 	float pulseInterval;
 	float ERP;
 	
-	float** attenTable;
+	double** attenTable;
+    std::mutex* mutexTable;
 	
 public:
 	EchoSimulator();
-	
+   
+    void PopulateAttenTable();
+    void PopulateAttenTablePartial(int start, int end);
+ 
 	void LoadElevationPattern(const char* filename);
-	
+    void AllocateAttenTable();	
 }
 
 #endif

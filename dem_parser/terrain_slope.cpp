@@ -7,7 +7,7 @@ using namespace std;
 
 #include "dem_parser.h"
 #include <math.h>
-
+#include <thread>
 
 // This is the inverse matrix described in the final design.
 // It is used to calculate the polynomial coefficients.
@@ -68,17 +68,19 @@ double ElevationMap::calculateDirectionalDerivative(float* h, float az) {
 	return sin(az)*b[1] + cos(az)*b[3];
 }
 
-void ElevationMap::calculateGrazingAngle() {
-    // Calculate the elevation slope on the map.
-    for (int i = 1; i < mapSizeX - 1; i++) {
-        for (int j = 1; j < mapSizeX - 1; j++) {
-            float h[9];
-            for (int k = 0; k < 9; k++) 
-                h[k] = elevation_map[i + (k%3 - 1)][j + (k/3 - 1)];
-            map[i][j].grazing = atan(   calculateDirectionalDerivative((float*)h, 
-                                        map[i][j].az)) - map[i][j].el;
-        }
-    }
+void ElevationMap::populateGrazingAngle() {
+    float mapDelta = float(mapSizeX-1 -2)/float(threadCount);
+    std::thread threads[threadCount];   
+    
+    threads[0] = std::thread(&ElevationMap::populatePartial, this, 1, int(mapDelta)+1);
+    for (int i = 1; i < threadCount; i++) 
+        threads[i] = std::thread(   &ElevationMap::populateGrazingAnglePartial,this, 
+                                    int(mapDelta*(i))+2,
+                                    int(mapDelta*(i+1)+1)
+                                    );
+    for (int i = 0; i < threadCount; i++)
+        threads[i].join();
+
     // Calculate the terrain slope on the edges using a simple moving average.
     for (int i = 1; i < mapSizeX - 1; i++){
         map[i][0].grazing = 1.0/3.0 * ( map[i][1].grazing + 
@@ -115,6 +117,18 @@ void ElevationMap::calculateGrazingAngle() {
                                                         map[mapSizeX-2][mapSizeY-2].grazing + 
                                                         map[mapSizeX-2][mapSizeY-1].grazing
                                             );
+}
+
+void ElevationMap::populateGrazingAnglePartial(int start, int end) {
+    // Calculate the elevation slope on the map.
+    for (int i = start; i <= end; i++)
+        for (int j = 1; j < mapSizeX - 1; j++) {
+            float h[9];
+            for (int k = 0; k < 9; k++) 
+                h[k] = elevation_map[i + (k%3 - 1)][j + (k/3 - 1)];
+            map[i][j].grazing = atan(   calculateDirectionalDerivative((float*)h, 
+                                        map[i][j].az)) - map[i][j].el;
+        }
 }
 
 #ifdef DEBUG_TERRAIN_SLOPE 
