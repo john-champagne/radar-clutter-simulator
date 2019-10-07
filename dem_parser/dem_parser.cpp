@@ -1,6 +1,9 @@
 #include "dem_parser.h"
 #include <math.h>
 #include <stdlib.h>
+#include <fstream>
+
+using namespace std;
 
 #include <thread>
 #include <chrono>
@@ -225,6 +228,24 @@ chunk_t ElevationMap::getMap(int x, int y) {
     return map[x][y];
 }
 
+/** ElevationReader::saveMap
+ * DESCRIPTION:
+ *      Saves the map to a file.
+ * ARGUMENTS:
+ *      const char* filename
+ *          The name of the file to write to.
+ */
+void ElevationMap::saveMap(const char* filename) {
+    uint8_t fileVersion = 0x10;
+    ofstream fileOutput(filename, ios::out | ios::binary);
+    fileOutput.write(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
+    fileOutput.write(reinterpret_cast<char*>(&mapSizeX), sizeof(mapSizeX));
+    fileOutput.write(reinterpret_cast<char*>(&mapSizeY), sizeof(mapSizeY));
+    
+    for (int i = 0; i < mapSizeX; i++)
+        for (int j = 0; j < mapSizeY; j++)
+            fileOutput.write(reinterpret_cast<char*>(&map[i][j]), sizeof(map[i][j]));
+}
 
 ElevationMap::~ElevationMap(){
     deallocateMap();
@@ -234,12 +255,13 @@ ElevationMap::~ElevationMap(){
 #ifdef DEBUG_DEM_PARSER
 
 int main() {
-    for (int i = 1; i < 100; i++) {
+    for (int i = 1; i < 2; i++) {
         auto start = std::chrono::steady_clock::now();
         ElevationMap E;
         E.populateMap(38.52, -98.10, 100*i,0);
         auto end = std::chrono::steady_clock::now();
         std::cout  << 100*i << "," << (end - start).count() << std::endl;
+        E.saveMap("testMap.bin");
     }
 }
 
