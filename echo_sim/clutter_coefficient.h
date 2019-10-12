@@ -29,9 +29,9 @@ SOFTWARE.
 #ifndef CLUTTER_COEFFICIENT_H
 #define CLUTTER_COEFFICIENT_H
 
-double dBmToWatt(float dBm)  { return pow(10, dBm/10.0) / 1000.0; }
-double dBToGain(float dB)  { return pow(10, dB/10.0); }
-double WattTodBm(float Watt) { return log10(Watt*1000)*10; }
+double dBmToWatt(float dBm);
+double dBToGain(float dB);
+double WattTodBm(float Watt);
 
 enum TerrainType { 	TerrainRural, 
 					TerrainForest, 

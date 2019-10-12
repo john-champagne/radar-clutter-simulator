@@ -205,7 +205,8 @@ float ElevationReader::GetElevation(float lat, float lon){
     #else
     double tx = 3.141592/180.0;
     double d = GetDistance(lat*tx, lon*tx, 38.52*tx, -98.10*tx);
-    return d; // Debug mode for if database is not accesssible
+    d = d/100;
+    return 1; // Debug mode for if database is not accesssible
     #endif
 }
 

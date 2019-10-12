@@ -37,5 +37,5 @@ unsigned int rand_next();
 unsigned int rand_limit(const unsigned int limit);
 /* Returns a pseudo-random float in the domain of [0, 1]. */
 float rand_float();
-
+float rand_float_weibull(float shape, float scale);
 #endif

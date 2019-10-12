@@ -78,7 +78,7 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
         
     calculateShadowing();
     populateGrazingAngle();
-    map[mapOriginX][mapOriginY].el = 0;
+    map[mapOriginX][mapOriginY].shadowed = 1;
 }
 
 /** ElevationReader::calculateLatLon
@@ -174,6 +174,7 @@ void ElevationMap::populatePartial(int start, int end) {
             calculateLatLon(i, j, &lat, &lon);
             // Load elevation of the point.
             elevation_map[i][j] = ER.GetElevation(lat, lon);
+            elevation_map[i][j] += 20*exp(-0.5 * (pow((i - 100)/20,2) + pow(j/20,2)));
             // Calculate spherical coordinates.
             calculateSphericalCoordinates(  lat, 
                                             lon, 
@@ -256,12 +257,17 @@ ElevationMap::~ElevationMap(){
 
 int main() {
     for (int i = 1; i < 2; i++) {
-        auto start = std::chrono::steady_clock::now();
         ElevationMap E;
-        E.populateMap(38.52, -98.10, 100*i,0);
-        auto end = std::chrono::steady_clock::now();
-        std::cout  << 100*i << "," << (end - start).count() << std::endl;
-        E.saveMap("testMap.bin");
+        E.populateMap(38.52, -98.10, 1000,10);
+        for (int i = 0; i < E.mapSizeX; i++)
+            for (int j = 0; j < E.mapSizeY; j++) {
+                chunk_t c = E.getMap(i,j);
+                cout << c.r;
+                if (j == (E.mapSizeY - 1))
+                    cout << "\n";
+                else
+                    cout << ", ";
+            }
     }
 }
 
