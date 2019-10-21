@@ -36,7 +36,8 @@ double inverseHeightMatrix[9][9] = {
  *      double
  *          The directional derivative.
  */
-double ElevationMap::calculateDirectionalDerivative(float* h, float az) {
+double ElevationMap::calculateDirectionalDerivative(float* h, float az){return 0;}
+double calculateDirectionalDerivative(float* h, float az) {
 	double b[9];
 	for (int i = 0; i < 9; i++) {
 		b[i] = 0;
@@ -72,7 +73,7 @@ void ElevationMap::populateGrazingAngle() {
     float mapDelta = float(mapSizeX-1 -2)/float(threadCount);
     std::thread threads[threadCount];   
     
-    threads[0] = std::thread(&ElevationMap::populatePartial, this, 1, int(mapDelta)+1);
+    //threads[0] = std::thread(&ElevationMap::populatePartial, this, 1, int(mapDelta)+1);
     for (int i = 1; i < threadCount; i++) 
         threads[i] = std::thread(   &ElevationMap::populateGrazingAnglePartial,this, 
                                     int(mapDelta*(i))+2,
@@ -134,12 +135,8 @@ void ElevationMap::populateGrazingAnglePartial(int start, int end) {
 #ifdef DEBUG_TERRAIN_SLOPE 
 
 int main() {
-	for (int i = 0; i < 100; i++) {
-		double h[9] = {0,0,0,0,0,0,0,0,0};
-		for (int j = 0; j < 9; j++)
-			h[j] = (rand() % 100) - 50;
+		float h[9] = {0.25,0.25,0,0.25,0,0,0,0,0};
 		calculateDirectionalDerivative(h,0);
-	}
 }
 
 #endif
