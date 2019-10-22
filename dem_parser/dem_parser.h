@@ -35,34 +35,47 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-
+// chunk_t
+// A single element of the terrain map.
 typedef struct chunk_t {
     float r,az,el;         // Spherical Coordinates w.r.t. radar transmitter.
     uint8_t shadowed;
     float grazing;         // Grazing Angle.
 } chunk_t;
 
-
+// ElevationMap
+// A class containing the map, with functions to calculate/populate the map.
 class ElevationMap {
 private:
+    // Instance of the elevation reader.
     ElevationReader ER;
-    
+
+    // 2D arrays containing the map.
     chunk_t** map;
     float** elevation_map;
-    
+
+    // Coordinates of the origin in the map array
     int mapOriginX, mapOriginY;
     
-
+    // The origin lat, lon, and height
     double originLat, originLon, originHeight;
-	ThreeVector origin;
+	
+    // The origin vector and x,y,z unit vectors.
+    ThreeVector origin;
     ThreeVector axis[3];
 
+    // The distance between chunks in meters.
     static constexpr double deltaDistance = 30;
-   
+  
+    // Calculates secondary parameters. 
     void calculateSecondaryParameters();
 
+    // Calculates the longitude and latitude for a given array element.
     void calculateLatLon(int x, int y, float* lat, float* lon);
+   
+    // Calculates the spherical coordinates for a given lon,lat,height pair. 
     void calculateSphericalCoordinates(float lat, float lon,float h, float*az, float*el, float* r);
+    
     void populateSphericalCoordinates(int start, int end);
     void populatePartial(int start, int end);    	
     // Grazing Angle Calculations

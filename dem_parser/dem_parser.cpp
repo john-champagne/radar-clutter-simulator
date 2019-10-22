@@ -151,7 +151,7 @@ void ElevationMap::calculateSphericalCoordinates(float lat, float lon, float h, 
     *az = atan2(x, y);
 }
 
-/** ElevationReader::populateSphericalCoordinates
+/** ElevationReader::populatePartial
  * DESCRIPTION:
  *      Populates a partial section of the map with spherical coordinates.
  *      Used to multithread the process.
@@ -159,22 +159,17 @@ void ElevationMap::calculateSphericalCoordinates(float lat, float lon, float h, 
  *      int start, end
  *          The start and end points of the map. 
  */
-void ElevationMap::populateSphericalCoordinates(int start, int end) {
-    //for (int i = start; i <= end; i++)
-        //for (int j = 0; j < mapSizeY; j++)
-            //calculateSphericalCoordinates(i,j, &map[i][j].az, &map[i][j].el, &map[i][j].r);
-}
-
 void ElevationMap::populatePartial(int start, int end) {
+    // Wait until the first row is allocated.
     while (alloc_i < 1)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    //
     for (int i = 0; i < mapSizeY; i++) {
         for (int j = start; j <= end; j++) {
             float lat, lon;
             calculateLatLon(i, j, &lat, &lon);
             // Load elevation of the point.
             elevation_map[i][j] = ER.GetElevation(lat, lon);
-            elevation_map[i][j] += 20*exp(-0.5 * (pow((i - 100)/20,2) + pow(j/20,2)));
             // Calculate spherical coordinates.
             calculateSphericalCoordinates(  lat, 
                                             lon, 
@@ -183,7 +178,7 @@ void ElevationMap::populatePartial(int start, int end) {
                                             &map[i][j].el, 
                                             &map[i][j].r);
         }
-        // Wait for the next column to be allocated before continuing.
+        // Wait for the next row to be allocated before continuing.
         while (i >= alloc_i - 1)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -248,6 +243,11 @@ void ElevationMap::saveMap(const char* filename) {
             fileOutput.write(reinterpret_cast<char*>(&map[i][j]), sizeof(map[i][j]));
 }
 
+
+/*  ElevationMap::~ElevationMap
+ *  DESCRIPTION
+ *      Destructor method. Deallocates the maps.
+*/
 ElevationMap::~ElevationMap(){
     deallocateMap();
     deallocateElevation();
