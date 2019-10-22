@@ -3,6 +3,7 @@
 
 #include "elevation_reader.h"
 #include "threevector.h"
+#include "../options.h"
 
 // Define EXPORTED for any platform
 // This code copied from: https://atomheartother.github.io/c++/2018/07/12/CPPDynLib.html
@@ -49,7 +50,7 @@ class ElevationMap {
 private:
     // Instance of the elevation reader.
     ElevationReader ER;
-
+    options_t* Options;
     // 2D arrays containing the map.
     chunk_t** map;
     float** elevation_map;
@@ -105,7 +106,8 @@ public:
     void setMap(int x, int y, chunk_t m);
 
     void saveMap(const char* filename);
-
+    
+    ElevationMap(options_t*);
     ~ElevationMap();
 
 };

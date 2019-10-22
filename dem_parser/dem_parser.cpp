@@ -243,6 +243,16 @@ void ElevationMap::saveMap(const char* filename) {
             fileOutput.write(reinterpret_cast<char*>(&map[i][j]), sizeof(map[i][j]));
 }
 
+/* ElevationMap::ElevationMap
+ * DESCRIPTION
+ *      Constructor method. Assigns the program options to the elevation map.
+ * ARGUMENTS
+ *      options_t* O
+ *          A pointer to the program options.
+*/
+ElevationMap::ElevationMap(options_t* O) {
+    this->Options = O;
+}
 
 /*  ElevationMap::~ElevationMap
  *  DESCRIPTION

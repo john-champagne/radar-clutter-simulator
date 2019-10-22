@@ -10,7 +10,7 @@ cxxopts::ParseResult parse (int argc, char* argv[]) {
         options.add_options()
             ("t,lat", "Latitude (degrees)", cxxopts::value<float>())
             ("n,lon", "Longitude (degrees)", cxxopts::value<float>())
-            ("r,radius", "Radius (meters)", cxxopts:value<float>()) 
+            ("r,radius", "Radius (meters)", cxxopts::value<float>()) 
             ("h,help", "Print help page");
         return options.parse(argc, argv);
     } catch (cxxopts::OptionException& e) {
