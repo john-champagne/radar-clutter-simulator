@@ -49,7 +49,7 @@ typedef struct chunk_t {
 class ElevationMap {
 private:
     // Instance of the elevation reader.
-    ElevationReader ER;
+    ElevationReader* ER;
     options_t* Options;
     // 2D arrays containing the map.
     chunk_t** map;
@@ -66,7 +66,7 @@ private:
     ThreeVector axis[3];
 
     // The distance between chunks in meters.
-    static constexpr double deltaDistance = 30;
+    double deltaDistance = 30;
   
     // Calculates secondary parameters. 
     void calculateSecondaryParameters();
@@ -99,7 +99,7 @@ private:
     int elevation_i;
 public:
     int mapSizeX, mapSizeY;
-    void populateMap(double lat, double lon, double radius, double height);
+    void populateMap();
 
     // Accessor Functions
     chunk_t getMap(int x, int y);

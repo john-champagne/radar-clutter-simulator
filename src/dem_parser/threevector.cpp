@@ -7,7 +7,7 @@ using namespace std;
 
 #endif
 
-#include "threevector.h"
+#include "dem_parser/threevector.h"
 #include <math.h>
 
 #define sind(x) (sin(fmod((x),360) * M_PI / 180))

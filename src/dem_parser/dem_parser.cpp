@@ -1,4 +1,4 @@
-#include "dem_parser.h"
+#include "dem_parser/dem_parser.h"
 #include <math.h>
 #include <stdlib.h>
 #include <fstream>
@@ -21,12 +21,19 @@ using namespace std;
  *      double radius
  *          The radius from the origin to populate in meters.
  */
-void ElevationMap::populateMap(double lat, double lon, double radius, double height){
-    originLat = lat;
-    originLon = lon;
-    originHeight = ER.GetElevation(lat,lon) + height;
+void ElevationMap::populateMap(){
+    ER = new ElevationReader(Options);
+    originLat = Options->SIMULATOR_ORIGIN_LAT;
+    originLon = Options->SIMULATOR_ORIGIN_LON; 
+    originHeight = ER->GetElevation(originLat,originLon) + Options->SIMULATOR_TRANSMITTER_HEIGHT;
+    float radius = Options->SIMULATOR_RADIUS;
+
+    deltaDistance = Options->DEM_PARSER_DELTA_DISTANCE;
     
-    threadCount = std::thread::hardware_concurrency();
+    if (Options->SIMULATOR_THREAD_COUNT == -1) 
+        threadCount = std::thread::hardware_concurrency();
+    else
+        threadCount = Options->SIMULATOR_THREAD_COUNT;
     std::thread threads[threadCount];
 
     
@@ -45,9 +52,9 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
     origin = calculateECEF(originLat, originLon, originHeight);
    
     // y-axis reference
-    axis[1] = calculateECEF(lat + 0.00001, lon, originHeight) - origin;
+    axis[1] = calculateECEF(originLat + 0.00001, originLon, originHeight) - origin;
     // x-axis reference
-    axis[0] = calculateECEF(lat, lon - 0.00001, originHeight) - origin;
+    axis[0] = calculateECEF(originLat, originLon - 0.00001, originHeight) - origin;
     // z-axis = x cross y 
     axis[2] = axis[1].cross(axis[0]);
     
@@ -75,8 +82,10 @@ void ElevationMap::populateMap(double lat, double lon, double radius, double hei
         for (int i = 0; i < threadCount; i++)
             threads[i].join();
     }
-        
-    calculateShadowing();
+    // Calculate Shadowing.
+    if (Options->SIMULATOR_SHADOWING_ENABLED)    
+        calculateShadowing();
+
     populateGrazingAngle();
     map[mapOriginX][mapOriginY].shadowed = 1;
 }
@@ -100,7 +109,7 @@ void ElevationMap::calculateLatLon(int x, int y, float* lat, float* lon) {
             walkAzimuth = 90;
         else if (x > mapOriginX)
             walkAzimuth = 270;
-        ER.WalkDistance(    (double)originLat, 
+        ER->WalkDistance(    (double)originLat, 
                             (double)originLon, 
                             walkAzimuth, 
                             (double)fabs(x-mapOriginX)*deltaDistance,
@@ -117,7 +126,7 @@ void ElevationMap::calculateLatLon(int x, int y, float* lat, float* lon) {
         else if (y > mapOriginY)
             walkAzimuth = 0;
     }
-    ER.WalkDistance (   (double)latTemp, 
+    ER->WalkDistance (   (double)latTemp, 
                         (double)lonTemp, 
                         walkAzimuth,
                         (double)fabs(y-mapOriginY)*deltaDistance,
@@ -169,7 +178,7 @@ void ElevationMap::populatePartial(int start, int end) {
             float lat, lon;
             calculateLatLon(i, j, &lat, &lon);
             // Load elevation of the point.
-            elevation_map[i][j] = ER.GetElevation(lat, lon);
+            elevation_map[i][j] = ER->GetElevation(lat, lon);
             // Calculate spherical coordinates.
             calculateSphericalCoordinates(  lat, 
                                             lon, 
@@ -261,6 +270,7 @@ ElevationMap::ElevationMap(options_t* O) {
 ElevationMap::~ElevationMap(){
     deallocateMap();
     deallocateElevation();
+    delete ER;
 }
 
 #ifdef DEBUG_DEM_PARSER

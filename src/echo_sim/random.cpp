@@ -26,7 +26,7 @@ SOFTWARE.
  * Date Created:    Oct 2 2019
  */
 
-#include "random.h"
+#include "echo_sim/random.h"
 #include <math.h>
 
 /* Local functions. */

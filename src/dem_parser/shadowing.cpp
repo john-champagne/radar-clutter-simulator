@@ -2,7 +2,7 @@
 #include <stdio.h>
 #endif
 
-#include "dem_parser.h"
+#include "dem_parser/dem_parser.h"
 #include <vector>
 #include <assert.h>
 #include <math.h>

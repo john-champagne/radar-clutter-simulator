@@ -9,9 +9,10 @@ set (RadarClutterSimulator_VERSION_MINOR 1)
 set (CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} ${CMAKE_CXX_COMPILER} ")
 
 include_directories(include)
-
-add_executable(RadarClutterSimulator src/cli_interface.cpp)
-
+FILE(GLOB SRCFILES src/*.cpp)
+add_executable(clutter_sim src/cli_interface.cpp src/dem_parser/dem_parser.cpp src/dem_parser/elevation_reader.cpp src/dem_parser/shadowing.cpp src/dem_parser/terrain_slope.cpp src/dem_parser/threevector.cpp src/echo_sim/clutter_coefficient.cpp src/echo_sim/conversion.cpp src/echo_sim/echo_sim.cpp src/echo_sim/random.cpp)

@@ -40,9 +40,10 @@ furnished to do so, subject to the following conditions:
     } AntennaPattern_t;
 
 class EchoSimulator {
-    private:
-    ElevationMap map;
+private:
+    ElevationMap* map;
     AntennaPattern_t pattern;
+    options_t* Options;
         
     uint16_t rangeBinCount;
     uint16_t azimuthCount;
@@ -57,8 +58,8 @@ class EchoSimulator {
     float GetRotatedAzimuthAngle(float az, int azBin); 
     float AntennaGain(float az, float el);
 
-    public:
-	EchoSimulator();
+public:
+    EchoSimulator(options_t*);
    
     void PopulateAttenTable();
     void PopulateAttenTablePartial(int start, int end);

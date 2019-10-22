@@ -18,8 +18,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "elevation_reader.h"
-#include "include/json/cJSON.h"
+#include "dem_parser/elevation_reader.h"
 
 #define D_TO_R M_PI / 180.0f
 #define R_TO_D 180.0f / M_PI
@@ -32,35 +31,13 @@ ElevationReader::ElevationReader(){
     //readConfigFile("config.json"); 
 }
 
-ElevationReader::ElevationReader(char* f){
+ElevationReader::ElevationReader(options_t* O){
+    Options = O;
     srtmFd = NULL;
     srtmLat = 255; //default never valid
     srtmLon = 255;
     srtmTile = NULL;
-    
-    readConfigFile(f);
-}
-
-/** ElevationReader::readConfigFile
- *  DESCRIPTION:
- *      Reads a json configuration file from the hard drive.
- *  
- *  ARGUMENTS:
- *      char* filename
- *          The filename of the configuration file.
- *
- *  RETURNS:
- *      N/A
- */
-void ElevationReader::readConfigFile(char* filename) {
-    std::ifstream configFile(filename);
-    assert(configFile.is_open());
-    std::string str((std::istreambuf_iterator<char>(configFile)),
-                 std::istreambuf_iterator<char>()); 
-    cJSON* config = cJSON_Parse(str.c_str());
-    strcpy(folder, config->child->valuestring);
-    cJSON_Delete(config);
-    configFile.close();
+    strcpy(folder, Options->DEM_PARSER_SRTM_FOLDER);
 }
 
 ElevationReader::~ElevationReader(){
@@ -157,57 +134,57 @@ void ElevationReader::ReadHeightFromTile(int y, int x, int* height){
  *      a float, representing the elevation.
  */
 float ElevationReader::GetElevation(float lat, float lon){
-    #ifndef DISABLE_ELEVATION_DATABASE
-    int latDec = (int)floor(lat);
-    int lonDec = (int)floor(lon);
+    if (!Options->DEM_PARSER_DISABLE_ELEVATION) {
+        int latDec = (int)floor(lat);
+        int lonDec = (int)floor(lon);
 
-    float secondsLat = (lat-latDec) * 60 * 60;
-    float secondsLon = (lon-lonDec) * 60 * 60;
-    
-    LoadTileInMemory(latDec, lonDec);
-    //X coresponds to x/y values,
-    //everything easter/norhter (< S) is rounded to X.
-    //
-    //  y   ^
-    //  3   |       |   S
-    //      +-------+-------
-    //  0   |   X   |
-    //      +-------+-------->
-    // (sec)    0        3   x  (lon)
-    
-    //both values are 0-1199 (1200 reserved for interpolating)
-    int y = secondsLat/secondsPerPx;
-    int x = secondsLon/secondsPerPx;
-    
-    //get norther and easter points
-    int height[4];
-    ReadHeightFromTile(y,   x, &height[2]);
-    ReadHeightFromTile(y+1, x, &height[0]);
-    ReadHeightFromTile(y,   x+1, &height[3]);
-    ReadHeightFromTile(y+1, x+1, &height[1]);
+        float secondsLat = (lat-latDec) * 60 * 60;
+        float secondsLon = (lon-lonDec) * 60 * 60;
+        
+        LoadTileInMemory(latDec, lonDec);
+        //X coresponds to x/y values,
+        //everything easter/norhter (< S) is rounded to X.
+        //
+        //  y   ^
+        //  3   |       |   S
+        //      +-------+-------
+        //  0   |   X   |
+        //      +-------+-------->
+        // (sec)    0        3   x  (lon)
+        
+        //both values are 0-1199 (1200 reserved for interpolating)
+        int y = secondsLat/secondsPerPx;
+        int x = secondsLon/secondsPerPx;
+        
+        //get norther and easter points
+        int height[4];
+        ReadHeightFromTile(y,   x, &height[2]);
+        ReadHeightFromTile(y+1, x, &height[0]);
+        ReadHeightFromTile(y,   x+1, &height[3]);
+        ReadHeightFromTile(y+1, x+1, &height[1]);
 
-    //ratio where X lays
-    float dy = fmod(secondsLat, secondsPerPx) / secondsPerPx;
-    float dx = fmod(secondsLon, secondsPerPx) / secondsPerPx;
-    
-    // Bilinear interpolation
-    // h0------------h1
-    // |
-    // |--dx-- .
-    // |       |
-    // |      dy
-    // |       |
-    // h2------------h3   
-    return  height[0] * dy * (1 - dx) +
-            height[1] * dy * (dx) +
-            height[2] * (1 - dy) * (1 - dx) +
-            height[3] * (1 - dy) * dx;
-    #else
-    double tx = 3.141592/180.0;
-    double d = GetDistance(lat*tx, lon*tx, 38.52*tx, -98.10*tx);
-    d = d/100;
-    return 1; // Debug mode for if database is not accesssible
-    #endif
+        //ratio where X lays
+        float dy = fmod(secondsLat, secondsPerPx) / secondsPerPx;
+        float dx = fmod(secondsLon, secondsPerPx) / secondsPerPx;
+        
+        // Bilinear interpolation
+        // h0------------h1
+        // |
+        // |--dx-- .
+        // |       |
+        // |      dy
+        // |       |
+        // h2------------h3   
+        return  height[0] * dy * (1 - dx) +
+                height[1] * dy * (dx) +
+                height[2] * (1 - dy) * (1 - dx) +
+                height[3] * (1 - dy) * dx;
+    } else {
+        double tx = 3.141592/180.0;
+        double d = GetDistance(lat*tx, lon*tx, 38.52*tx, -98.10*tx);
+        d = d/100;
+        return 1; // Debug mode for if database is not accesssible
+    }
 }
 
 /** ElevationReader::GetDistance

@@ -5,7 +5,7 @@
 using namespace std;
 #endif
 
-#include "dem_parser.h"
+#include "dem_parser/dem_parser.h"
 #include <math.h>
 #include <thread>
 

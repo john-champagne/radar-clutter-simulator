@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "options.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -24,15 +25,6 @@ typedef struct _SrtmAscentDescent {
     float ascentOn;
     float descentOn;
 } TSrtmAscentDescent;
-
-/* A description file for a chunk of land.
- */
-typedef struct Chunk_t {
-	double elevation;
-	double x,y,z;
-	
-	uint8_t is_shadowed;
-} Chunk;
 
 /* The elevation reader class.
  *
@@ -50,7 +42,7 @@ class ElevationReader {
     unsigned char * srtmTile;
     
 private:
-
+    options_t* Options;
     char folder[1024];
 
     void LoadTileInMemory (int latDec, int lonDec);
@@ -71,9 +63,7 @@ public:
     void WalkDistance(double lat, double lon, double az, double s, double*lat_out, double* lon_out);
 
     ElevationReader();
-    ElevationReader(char*);
-
-    void readConfigFile(char*);
+    ElevationReader(options_t*);
 
     ~ElevationReader();
 };

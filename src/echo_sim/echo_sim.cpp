@@ -3,25 +3,35 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include "echo_sim.h"
-#include "clutter_coefficient.h"
+#include "echo_sim/echo_sim.h"
+#include "echo_sim/clutter_coefficient.h"
+#include "options.h"
 
-
-EchoSimulator::EchoSimulator() {
+/*EchoSimulator::EchoSimulator() {
     rangeBinCount     = ceil((1757.0)/(3.3333) + 13);
 	azimuthCount      = 4096;
 	rangeBinPeriod    = 3.333333333E-6;
 	pulseInterval     = 13 * rangeBinPeriod;
 	ERP               = dBmToWatt(86); 
+}*/
+
+EchoSimulator::EchoSimulator(options_t* O){
+    Options = O;
+    rangeBinCount   = Options->SIMULATOR_RANGE_BIN_COUNT;
+    azimuthCount    = Options->SIMULATOR_AZIMUTH_ANGLE_COUNT;
+    rangeBinPeriod  = Options->SIMULATOR_RANGE_BIN_PERIOD;
+    ERP             = Options->SIMULATOR_TRANSMIT_POWER;
+    pulseInterval   = Options->SIMULATOR_TRANSMIT_PULSE_LENGTH;
+    map = new ElevationMap(O);
 }
 
 void EchoSimulator::PopulateAttenTable() {
-    map.populateMap(38.52, -98.10, 100000,10);
+    map->populateMap();
     AllocateAttenTable();
     
     int threadCount = std::thread::hardware_concurrency();
     std::thread threads[threadCount];
-    float mapDelta = float(map.mapSizeX-1)/float(threadCount);
+    float mapDelta = float(map->mapSizeX-1)/float(threadCount);
     threads[0] = std::thread(&EchoSimulator::PopulateAttenTablePartial, this, 0, int(mapDelta));
     for (int i = 1; i < threadCount; i++) 
         threads[i] = std::thread(   &EchoSimulator::PopulateAttenTablePartial,this, 
@@ -35,9 +45,9 @@ void EchoSimulator::PopulateAttenTable() {
 
 void EchoSimulator::PopulateAttenTablePartial(int start, int end) {
     for (int j = start; j <= end; j++) {
-        for (int i = 0; i < map.mapSizeX; i++) {
+        for (int i = 0; i < map->mapSizeX; i++) {
             
-            chunk_t chunk = map.getMap(i,j);
+            chunk_t chunk = map->getMap(i,j);
             if (chunk.r <= 100000 || chunk.shadowed == 1){ 
             float time1 = chunk.r*2.0/300000000.0;
             int RangeBinStart = time1/rangeBinPeriod;

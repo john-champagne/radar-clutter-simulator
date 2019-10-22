@@ -1,5 +1,5 @@
-#include "clutter_coefficient.h"
-#include "random.h"
+#include "echo_sim/clutter_coefficient.h"
+#include "echo_sim/random.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
