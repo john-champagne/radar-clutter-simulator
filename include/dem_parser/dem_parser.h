@@ -105,7 +105,7 @@ public:
     chunk_t getMap(int x, int y);
     void setMap(int x, int y, chunk_t m);
 
-    void saveMap(const char* filename);
+    void exportMap();
     
     ElevationMap(options_t*);
     ~ElevationMap();

@@ -16,6 +16,7 @@ typedef struct options_t {
     std::string DEM_PARSER_SRTM_FOLDER = "srtm";
     uint8_t     DEM_PARSER_DISABLE_ELEVATION = 0;
     
+    
     float       SIMULATOR_RADIUS = 264000.0;
     float       SIMULATOR_ORIGIN_LAT = 44.17;
     float       SIMULATOR_ORIGIN_LON = -110.29;

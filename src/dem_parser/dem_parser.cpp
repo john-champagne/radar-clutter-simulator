@@ -102,6 +102,7 @@ void ElevationMap::populateMap(){
     if (Options->PROG_VERBOSE)
         cout << "Finished grazing angle calculations." << endl;
     map[mapOriginX][mapOriginY].shadowed = 1;
+    exportMap();
 }
 
 /** ElevationReader::calculateLatLon
@@ -247,24 +248,6 @@ chunk_t ElevationMap::getMap(int x, int y) {
     return map[x][y];
 }
 
-/** ElevationReader::saveMap
- * DESCRIPTION:
- *      Saves the map to a file.
- * ARGUMENTS:
- *      const char* filename
- *          The name of the file to write to.
- */
-void ElevationMap::saveMap(const char* filename) {
-    uint8_t fileVersion = 0x10;
-    ofstream fileOutput(filename, ios::out | ios::binary);
-    fileOutput.write(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
-    fileOutput.write(reinterpret_cast<char*>(&mapSizeX), sizeof(mapSizeX));
-    fileOutput.write(reinterpret_cast<char*>(&mapSizeY), sizeof(mapSizeY));
-    
-    for (int i = 0; i < mapSizeX; i++)
-        for (int j = 0; j < mapSizeY; j++)
-            fileOutput.write(reinterpret_cast<char*>(&map[i][j]), sizeof(map[i][j]));
-}
 
 /* ElevationMap::ElevationMap
  * DESCRIPTION
