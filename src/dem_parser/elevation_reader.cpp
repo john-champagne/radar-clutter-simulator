@@ -37,7 +37,7 @@ ElevationReader::ElevationReader(options_t* O){
     srtmLat = 255; //default never valid
     srtmLon = 255;
     srtmTile = NULL;
-    strcpy(folder, Options->DEM_PARSER_SRTM_FOLDER);
+    strcpy(folder, Options->DEM_PARSER_SRTM_FOLDER.c_str());
 }
 
 ElevationReader::~ElevationReader(){

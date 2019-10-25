@@ -9,6 +9,9 @@ using namespace std;
 #include <chrono>
 #include <iostream>
 
+using std::cout;
+using std::endl;
+
 #define sind(x) (sin(fmod((x),360) * M_PI / 180))
 #define cosd(x) (cos(fmod((x),360) * M_PI / 180))
 
@@ -34,8 +37,10 @@ void ElevationMap::populateMap(){
         threadCount = std::thread::hardware_concurrency();
     else
         threadCount = Options->SIMULATOR_THREAD_COUNT;
-    std::thread threads[threadCount];
+    std::thread* threads = new std::thread[threadCount];
 
+    if (Options->PROG_VERBOSE)
+        cout << "Starting DEM Parser with " << threadCount << " threads." << endl;    
     
     mapSizeX = 2 * radius / deltaDistance;
     mapSizeY = 2 * radius / deltaDistance;
@@ -81,12 +86,21 @@ void ElevationMap::populateMap(){
         // Wait for threads to complete.
         for (int i = 0; i < threadCount; i++)
             threads[i].join();
+        
+        delete threads;
+        if (Options->PROG_VERBOSE)
+            cout << "Finished populating map." << endl;
     }
     // Calculate Shadowing.
-    if (Options->SIMULATOR_SHADOWING_ENABLED)    
+    if (Options->SIMULATOR_SHADOWING_ENABLED) {
         calculateShadowing();
+        if (Options->PROG_VERBOSE)
+            cout << "Finished shadowing calculations." << endl;
+    }
 
     populateGrazingAngle();
+    if (Options->PROG_VERBOSE)
+        cout << "Finished grazing angle calculations." << endl;
     map[mapOriginX][mapOriginY].shadowed = 1;
 }
 

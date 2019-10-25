@@ -18,6 +18,7 @@ cxxopts::ParseResult parse(int argc, char* argv[]) {
             ("t,lat", "Latitude (degrees)", cxxopts::value<float>())
             ("n,lon", "Longitude (degrees)", cxxopts::value<float>())
             ("r,radius", "Radius (meters)", cxxopts::value<float>())
+            ("v,verbose", "Verbose mode", cxxopts::value<bool>()->default_value("false"))
             ("disable-elevation", "Disable Elevation Reader", cxxopts::value<bool>()->default_value("false"))           
             ("h,help", "Print help page");
         return options.parse(argc, argv);
@@ -40,6 +41,8 @@ int main(int argc, char*argv[]) {
             O.SIMULATOR_RADIUS = result["radius"].as<float>();
         if (result.count("disable-elevation"))
             O.DEM_PARSER_DISABLE_ELEVATION = 1;
+        if (result.count("verbose"))
+            O.PROG_VERBOSE = 1;
     } else {
         printHelp();
         return 1; 

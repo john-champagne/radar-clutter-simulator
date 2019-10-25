@@ -1,6 +1,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <string>
 
 /* struct options_t
  * Contains all the options for the simulator.
@@ -12,7 +13,7 @@ typedef struct options_t {
     uint8_t     DEM_PARSER_EXPORT_ELEVATION_ANGLE = 0;
     uint8_t     DEM_PARSER_EXPORT_GRAZING_ANGLE = 0;
     uint8_t     DEM_PARSER_EXPORT_SHADOWING = 0;
-    char*       DEM_PARSER_SRTM_FOLDER = "srtm";
+    std::string DEM_PARSER_SRTM_FOLDER = "srtm";
     uint8_t     DEM_PARSER_DISABLE_ELEVATION = 0;
     
     float       SIMULATOR_RADIUS = 264000.0;
@@ -33,6 +34,7 @@ typedef struct options_t {
                                              // If you have more than 127 threads:
                                              // First of all, congrats.
                                              // Second, you'll need to make this a int16_t
+    uint8_t     PROG_VERBOSE = 0;
 } options_t;
 
 #endif

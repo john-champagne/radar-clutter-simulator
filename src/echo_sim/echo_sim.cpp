@@ -1,6 +1,10 @@
 #include <assert.h>
 #include <math.h>
 #include <iostream>
+
+using std::cout;
+using std::endl;
+
 #include <fstream>
 #include <thread>
 #include "echo_sim/echo_sim.h"
@@ -28,7 +32,8 @@ EchoSimulator::EchoSimulator(options_t* O){
 void EchoSimulator::PopulateAttenTable() {
     map->populateMap();
     AllocateAttenTable();
-    
+    if (Options->PROG_VERBOSE)
+       cout << "Power Table Allocated." << endl; 
     int threadCount = std::thread::hardware_concurrency();
     std::thread threads[threadCount];
     float mapDelta = float(map->mapSizeX-1)/float(threadCount);
@@ -70,8 +75,8 @@ void EchoSimulator::PopulateAttenTablePartial(int start, int end) {
             for (int k = RangeBinStart + 1; k < RangeBinEnd; k++)
                 AddPowerReceived(IsotropicPower, chunk.az, chunk.el, k);
         }}
-        //std::cout << float(j-start)/float(end - start) << "%\n";
     }
+    cout << ".";
 }
 
 void EchoSimulator::AllocateAttenTable() {

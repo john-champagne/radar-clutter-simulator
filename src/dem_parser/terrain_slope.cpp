@@ -73,7 +73,7 @@ void ElevationMap::populateGrazingAngle() {
     float mapDelta = float(mapSizeX-1 -2)/float(threadCount);
     std::thread threads[threadCount];   
     
-    //threads[0] = std::thread(&ElevationMap::populatePartial, this, 1, int(mapDelta)+1);
+    threads[0] = std::thread(&ElevationMap::populateGrazingAnglePartial, this, 1, int(mapDelta)+1);
     for (int i = 1; i < threadCount; i++) 
         threads[i] = std::thread(   &ElevationMap::populateGrazingAnglePartial,this, 
                                     int(mapDelta*(i))+2,
