@@ -87,7 +87,7 @@ void ElevationMap::populateMap(){
         for (int i = 0; i < threadCount; i++)
             threads[i].join();
         
-        delete threads;
+        delete[] threads;
         if (Options->PROG_VERBOSE)
             cout << "Finished populating map." << endl;
     }
