@@ -33,8 +33,8 @@ void EchoSimulator::PopulateAttenTable() {
     map->populateMap();
     AllocateAttenTable();
     if (Options->PROG_VERBOSE)
-       cout << "Power Table Allocated." << endl; 
-    int threadCount = std::thread::hardware_concurrency();
+       cout << "Power table allocated." << endl; 
+    int threadCount = Options->SIMULATOR_THREAD_COUNT;
     std::thread threads[threadCount];
     float mapDelta = float(map->mapSizeX-1)/float(threadCount);
     threads[0] = std::thread(&EchoSimulator::PopulateAttenTablePartial, this, 0, int(mapDelta));
@@ -110,8 +110,11 @@ void EchoSimulator::AddPowerReceived(double watts, float az, float el, int range
     #endif
     for (int i = 0; i < azimuthCount; i++) {
         // Apply the antenna pattern to each received echo.
-        double p = watts * AntennaGain(GetRotatedAzimuthAngle(az,i), el);
-        attenTable[rangeBin][i] += p;
+        double g = AntennaGain(GetRotatedAzimuthAngle(az,i), el);
+        if (g != 0) {
+            double p = watts * g;
+            attenTable[rangeBin][i] += p;
+        }
     }
     #ifdef MEMORY_SAFE
     mutexTable[rangeBin].unlock();

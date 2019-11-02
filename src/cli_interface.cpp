@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+using namespace std::chrono;
 
 #include "dem_parser/dem_parser.h"
 #include "echo_sim/echo_sim.h"
@@ -24,7 +26,9 @@ cxxopts::ParseResult parse(int argc, char* argv[]) {
             ("export-elevation", "Export Elevation Angles", cxxopts::value<bool>()->default_value("false"))  
             ("export-elevation-map", "Export Elevation Map", cxxopts::value<bool>()->default_value("false"))   
             ("export-grazing", "Export Grazing Angles", cxxopts::value<bool>()->default_value("false"))   
-            ("export-shadowing", "Export Shadowing", cxxopts::value<bool>()->default_value("false"))               
+            ("export-shadowing", "Export Shadowing", cxxopts::value<bool>()->default_value("false"))
+            ("srtm", "SRTM folder", cxxopts::value<std::string>())
+            ("threads", "Number of CPU threads", cxxopts::value<int>())           
             ("h,help", "Print help page");
         return options.parse(argc, argv);
     } catch (cxxopts::OptionException& e) {
@@ -58,13 +62,23 @@ int main(int argc, char*argv[]) {
             O.DEM_PARSER_EXPORT_GRAZING_ANGLE = 1;
         if (result.count("export-shadowing"))
             O.DEM_PARSER_EXPORT_SHADOWING = 1;
+        if (result.count("srtm")) 
+            O.DEM_PARSER_SRTM_FOLDER = result["srtm"].as<std::string>();
+        if (result.count("threads"))
+            O.SIMULATOR_THREAD_COUNT = result["threads"].as<int>();
     } else {
         printHelp();
         return 1; 
     }
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     EchoSimulator Simulator(&O);
     Simulator.PopulateAttenTable();
     Simulator.SaveToFile("output.atten");
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+
+    std::cout << "Execution time: " << time_span.count() << " seconds.";
+    std::cout << std::endl;
 }
 
 void printHelp(){
