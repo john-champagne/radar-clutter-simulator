@@ -33,10 +33,7 @@ void ElevationMap::populateMap(){
 
     deltaDistance = Options->DEM_PARSER_DELTA_DISTANCE;
     
-    if (Options->SIMULATOR_THREAD_COUNT == -1) 
-        threadCount = std::thread::hardware_concurrency();
-    else
-        threadCount = Options->SIMULATOR_THREAD_COUNT;
+    threadCount = Options->SIMULATOR_THREAD_COUNT;
     std::thread* threads = new std::thread[threadCount];
 
     if (Options->PROG_VERBOSE)

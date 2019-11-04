@@ -54,7 +54,7 @@ void ElevationReader::LoadTileInMemory(int latDec, int lonDec){
             fclose(srtmFd);
         }
         
-        char filename[20];
+        char filename[1024];
         sprintf(filename, "%s/%c%02d%c%03d.hgt", folder, 
 					latDec>0?'N':'S', abs(latDec), 
 					lonDec>0?'E':'W', abs(lonDec));

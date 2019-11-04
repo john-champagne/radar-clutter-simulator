@@ -54,14 +54,21 @@ void EchoSimulator::PopulateAttenTablePartial(int start, int end) {
             
             chunk_t chunk = map->getMap(i,j);
             if (chunk.r <= 100000 || chunk.shadowed == 1){ 
-            float time1 = chunk.r*2.0/300000000.0;
+            float time1 = chunk.r*2.0/Options->SIMULATOR_WAVE_SPEED;
             int RangeBinStart = time1/rangeBinPeriod;
             int RangeBinEnd = (time1 + pulseInterval)/rangeBinPeriod;
             // Isotropic Power = Radar equation without antenna gains.
             double IsotropicPower = ERP;
+            
+            // Wavelength in meters.
+            double wavelength = Options->SIMULATOR_WAVE_SPEED/Options->SIMULATOR_TRANSMIT_FREQUENCY;
+            IsotropicPower *= pow(wavelength,2);
+            
+            // Radar Cross Section = A * sigma0
             IsotropicPower *= (30*30);
-            IsotropicPower *= pow(300000000/200000000,2);
             IsotropicPower *= calculateClutterCoefficient(TerrainRural, chunk.grazing);
+            
+            // 1/R^4, 1/(4pi)^3
             IsotropicPower /= (pow(chunk.r,4)*pow(4*M_PI,3));
             assert(IsotropicPower >= 0.0);
             AddPowerReceived(   IsotropicPower * (1+RangeBinStart - time1/rangeBinPeriod),
@@ -134,7 +141,7 @@ void EchoSimulator::SaveCSV(const char* filename){
 }
 
 void EchoSimulator::SaveToFile(const char* filename) {
-    std::ofstream outputFile(filename, std::ios::out | std::ios::binary);
+    std::ofstream outputFile(Options->SIMULATOR_OUTPUT_FILENAME.c_str(), std::ios::out | std::ios::binary);
     outputFile.write((char*)&rangeBinCount, sizeof(rangeBinCount));
     outputFile.write((char*)&azimuthCount, sizeof(azimuthCount));
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <thread>
 using namespace std::chrono;
 
 #include "dem_parser/dem_parser.h"
@@ -13,33 +14,45 @@ void printHelp();
 using std::cout;
 using std::endl;
 
-cxxopts::ParseResult parse(int argc, char* argv[]) {
+cxxopts::ParseResult parse(int argc, char* argv[],cxxopts::Options* options ) {
     try {
-        cxxopts::Options options(argv[0], " ");
-        options.add_options()
+        //options = new cxxopts::Options(argv[0], " ");
+        options->add_options()
             ("t,lat", "Latitude (degrees)", cxxopts::value<float>())
             ("n,lon", "Longitude (degrees)", cxxopts::value<float>())
             ("r,radius", "Radius (meters)", cxxopts::value<float>())
             ("v,verbose", "Verbose mode", cxxopts::value<bool>()->default_value("false"))
-            ("disable-elevation", "Disable Elevation Reader", cxxopts::value<bool>()->default_value("false"))
+            ("disable-elevation", "Disable elevation reader", cxxopts::value<bool>()->default_value("false"))
             ("export-azimuth", "Export Azimuth Angles", cxxopts::value<bool>()->default_value("false"))
             ("export-elevation", "Export Elevation Angles", cxxopts::value<bool>()->default_value("false"))  
             ("export-elevation-map", "Export Elevation Map", cxxopts::value<bool>()->default_value("false"))   
             ("export-grazing", "Export Grazing Angles", cxxopts::value<bool>()->default_value("false"))   
             ("export-shadowing", "Export Shadowing", cxxopts::value<bool>()->default_value("false"))
+            
+            ("frequency", "The frequency of the carrier wave. (Hz)", cxxopts::value<float>()->default_value("200000000"))
+            ("erp", "The Effective Radiated Power (ERP). (Watt)", cxxopts::value<float>()->default_value("400000"))
+            ("pulse-length", "The length of the transmitted pulse. (s)", cxxopts::value<float>()->default_value("43.333333E-6"))
+            ("range-bin-count", "The number of range bins.", cxxopts::value<float>()->default_value("540"))
+            ("range-bin-period", "The period of each range bin. (s)", cxxopts::value<float>()->default_value("3.333333E-6"))
+            ("azimuth-angle-count", "The number of azimuth angle bins.", cxxopts::value<float>()->default_value("4096"))
+            ("wave-speed", "The speed that the wave propogates. (m/s)", cxxopts::value<float>()->default_value("299702505.269398111"))
+            
             ("srtm", "SRTM folder", cxxopts::value<std::string>())
-            ("threads", "Number of CPU threads", cxxopts::value<int>())           
+            ("threads", "Number of CPU threads", cxxopts::value<int>())
+            ("o,output", "Output file name", cxxopts::value<std::string>()->default_value("output.atten"))
             ("h,help", "Print help page");
-        return options.parse(argc, argv);
+        return options->parse(argc, argv);
     } catch (cxxopts::OptionException& e) {
-        std::cout << "Error parsing options: " << e.what() << endl << "Usage:" << endl;
-        printHelp();
+        std::cout << "Error parsing options: " << e.what() << endl << options->help() <<endl;
+        
         exit(1);
     }
 }
 
 int main(int argc, char*argv[]) {
-    auto result = parse(argc, argv);
+    cxxopts::Options* options = new cxxopts::Options(argv[0], " ");;
+    auto result = parse(argc, argv, options);
+    
     options_t O;
     if (!result.count("help")) {
         if (result.count("lat"))
@@ -64,10 +77,21 @@ int main(int argc, char*argv[]) {
             O.DEM_PARSER_EXPORT_SHADOWING = 1;
         if (result.count("srtm")) 
             O.DEM_PARSER_SRTM_FOLDER = result["srtm"].as<std::string>();
+        if (result.count("output")) 
+            O.SIMULATOR_OUTPUT_FILENAME = result["output"].as<std::string>();
         if (result.count("threads"))
             O.SIMULATOR_THREAD_COUNT = result["threads"].as<int>();
+        else
+            O.SIMULATOR_THREAD_COUNT = std::thread::hardware_concurrency();
+        if (result.count("wave-speed"))
+            O.SIMULATOR_WAVE_SPEED = result["wave-speed"].as<float>();
+        if (result.count("frequency"))
+            O.SIMULATOR_TRANSMIT_FREQUENCY = result["frequency"].as<float>();
+        if (result.count("erp"))
+            O.SIMULATOR_TRANSMIT_POWER = result["erp"].as<float>();
     } else {
-        printHelp();
+        cout << options->help();
+        //printHelp();
         return 1; 
     }
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
