@@ -102,8 +102,8 @@ void ElevationMap::exportMap() {
             shadowingExport.write(reinterpret_cast<char*>(&mapSizeY), sizeof(mapSizeY));
             for (int i = 0; i < mapSizeX; i++)
                 for (int j = 0; j < mapSizeY; j++)
-                    shadowingExport.write(   reinterpret_cast<char*>(&map[i][j].az),
-                                                sizeof(map[i][j].az)
+                    shadowingExport.write(   reinterpret_cast<char*>(&map[i][j].shadowed),
+                                                sizeof(map[i][j].shadowed)
                                             );
             shadowingExport.close();
             if (Options->PROG_VERBOSE)
