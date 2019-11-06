@@ -116,9 +116,10 @@ void ElevationReader::ReadHeightFromTile(int y, int x, int* height){
     
     if(hgt == -32768) {
         printf("ERROR: Void pixel found on xy(%d,%d) in latlon(%d,%d) tile.\n", x,y, srtmLat, srtmLon);
+        hgt = prevHeight;
         //exit(1);
     }
-    
+    prevHeight = (int) hgt;
     *height = (int) hgt;
 }       
 

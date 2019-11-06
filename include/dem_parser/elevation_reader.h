@@ -44,6 +44,7 @@ class ElevationReader {
 private:
     options_t* Options;
     char folder[1024];
+    int16_t prevHeight = 0;
 
     void LoadTileInMemory (int latDec, int lonDec);
     void ReadHeightFromTile (int y, int x, int* height);
