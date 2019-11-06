@@ -32,17 +32,12 @@ furnished to do so, subject to the following conditions:
 #include <mutex>
 #include "../dem_parser/elevation_reader.h"
 #include "../dem_parser/dem_parser.h"
-
-    typedef struct AntennaPattern_t {
-        int az_size;
-        int el_size;
-        float* el, az;
-    } AntennaPattern_t;
+#include "echo_sim/antenna_pattern.h"
 
 class EchoSimulator {
 private:
     ElevationMap* map;
-    AntennaPattern_t pattern;
+    AntennaPattern* pattern;
     options_t* Options;
         
     uint16_t rangeBinCount;
@@ -56,7 +51,6 @@ private:
 
     void AddPowerReceived(double , float, float, int);
     float GetRotatedAzimuthAngle(float az, int azBin); 
-    float AntennaGain(float az, float el);
 
 public:
     EchoSimulator(options_t*);

@@ -27,6 +27,7 @@ EchoSimulator::EchoSimulator(options_t* O){
     ERP             = Options->SIMULATOR_TRANSMIT_POWER;
     pulseInterval   = Options->SIMULATOR_TRANSMIT_PULSE_LENGTH;
     map = new ElevationMap(O);
+    pattern = new AntennaPatternAnalytical();
 }
 
 void EchoSimulator::PopulateAttenTable() {
@@ -102,14 +103,6 @@ float EchoSimulator::GetRotatedAzimuthAngle(float az, int azBin) {
     return new_az;
 }
 
-float EchoSimulator::AntennaGain(float az, float el) {
-    if (az >= -M_PI/2 && az <= M_PI/2)
-        return pow(cos(az),2)*abs(cos(3*az));
-    //return -1*cos(az)*abs(sin(3*az))/5.0;
-    return 0;
-}
-
-
 void EchoSimulator::AddPowerReceived(double watts, float az, float el, int rangeBin) {
     // Lock the range bin mutex so that no other threads can write to it.
     #ifdef MEMORY_SAFE
@@ -117,7 +110,7 @@ void EchoSimulator::AddPowerReceived(double watts, float az, float el, int range
     #endif
     for (int i = 0; i < azimuthCount; i++) {
         // Apply the antenna pattern to each received echo.
-        double g = AntennaGain(GetRotatedAzimuthAngle(az,i), el);
+        double g = pattern->Gain(GetRotatedAzimuthAngle(az,i), el);
         if (g != 0) {
             double p = watts * g;
             attenTable[rangeBin][i] += p;

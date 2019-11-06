@@ -15,4 +15,4 @@ message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERS
 
 include_directories(include)
 FILE(GLOB SRCFILES src/*.cpp)
-add_executable(clutter_sim src/cli_interface.cpp src/dem_parser/dem_parser.cpp src/dem_parser/elevation_reader.cpp src/dem_parser/shadowing.cpp src/dem_parser/map_exporter.cpp src/dem_parser/terrain_slope.cpp src/dem_parser/threevector.cpp src/echo_sim/clutter_coefficient.cpp src/echo_sim/conversion.cpp src/echo_sim/echo_sim.cpp src/echo_sim/random.cpp)
+add_executable(clutter_sim src/cli_interface.cpp src/dem_parser/dem_parser.cpp src/dem_parser/elevation_reader.cpp src/dem_parser/shadowing.cpp src/dem_parser/map_exporter.cpp src/dem_parser/terrain_slope.cpp src/dem_parser/threevector.cpp src/echo_sim/clutter_coefficient.cpp src/echo_sim/conversion.cpp src/echo_sim/echo_sim.cpp src/echo_sim/random.cpp src/echo_sim/antenna_pattern.cpp)
