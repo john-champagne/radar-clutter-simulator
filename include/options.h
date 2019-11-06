@@ -31,6 +31,7 @@ typedef struct options_t {
     uint16_t    SIMULATOR_AZIMUTH_ANGLE_COUNT = 4096;
     float       SIMULATOR_WAVE_SPEED = 299792458;
     std::string SIMULATOR_OUTPUT_FILENAME = "output.atten";
+    std::string SIMULATOR_ANTENNA_FILENAME = "";
 
     int8_t      SIMULATOR_THREAD_COUNT = -1; // -1 indicates that the program will decide.
                                              // If you have more than 127 threads:

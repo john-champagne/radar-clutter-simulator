@@ -28,7 +28,7 @@ ElevationReader::ElevationReader(){
     srtmLat = 255; //default never valid
     srtmLon = 255;
     srtmTile = NULL;
-    //readConfigFile("config.json"); 
+
 }
 
 ElevationReader::ElevationReader(options_t* O){
@@ -59,7 +59,6 @@ void ElevationReader::LoadTileInMemory(int latDec, int lonDec){
 					latDec>0?'N':'S', abs(latDec), 
 					lonDec>0?'E':'W', abs(lonDec));
 					
-        printf("Opening %s\n", filename);
         srtmFd = fopen(filename, "r");
         
         if(srtmFd == NULL) {
@@ -115,9 +114,7 @@ void ElevationReader::ReadHeightFromTile(int y, int x, int* height){
     int16_t hgt = 0 | (buff[0] << 8) | (buff[1] << 0);
     
     if(hgt == -32768) {
-        printf("ERROR: Void pixel found on xy(%d,%d) in latlon(%d,%d) tile.\n", x,y, srtmLat, srtmLon);
         hgt = prevHeight;
-        //exit(1);
     }
     prevHeight = (int) hgt;
     *height = (int) hgt;
@@ -282,7 +279,7 @@ void ElevationReader::WalkDistance(double lat, double lon, double az, double s, 
 	double d_lon;
 	static int iteration = 0;
 	//-----------------ITERATION------------------//
-	while( true )//while ( fabs(SIGMA[1] - SIGMA[0]) > 1e-8 )
+	while( true )
     {
         sigmaM = 2*sigma1 + SIGMA[0]; //ACTUALLY TWO SIGMA-M
         d_sigma = B*sin(SIGMA[0])*(cos(sigmaM)+B/4*(cos(SIGMA[0])*
@@ -305,67 +302,4 @@ void ElevationReader::WalkDistance(double lat, double lon, double az, double s, 
 	C 	= f/16*pow(cos(Aeq),2)*(4+f*(4-3*pow(cos(Aeq),2)));
 	d_lon = d_w - (1-C)*f*sin(az)*(SIGMA[1] + C*sin(SIGMA[1])*(cos(sigmaM)+C*cos(SIGMA[1])*(-1+2*pow(cos(sigmaM),2))));
 	*lon_out = (lon + d_lon) * R_TO_D;
-	//azimuth2 = atan2(sin(Aeq) , (-sin(beta1)*sin(SIGMA[1])+cos(beta1)*cos(SIGMA[1])*cos(az)))/**180/M_PI*/;
-	//if(*azimuth2 <0){
-    //		*azimuth2 = 2*M_PI+*azimuth2;
 }
-
-
-/** Returns amount of ascent and descent between points */
-TSrtmAscentDescent ElevationReader::GetAscentDescent(float lat1, float lon1, float lat2, float lon2, float dist){
-    TSrtmAscentDescent ret = {0};
-    
-    //segment we need to devide in "pixels"
-    double latDiff = lat2 - lat1;
-    double lonDiff = lon2 - lon1;
-    
-    //how many pixels there are both in y and x axis
-    double latSteps = latDiff * (3600 / 3); // 1/pixelDistance = cca 0.00083
-    double lonSteps = lonDiff * (3600 / 3);
-    
-    //we use the max of both
-    int steps = fmax(fabs(latSteps), fabs(lonSteps));
-
-    //just in case both points are inside one pixel (we need interpolation!)
-    if(steps == 0) steps = 1;
-    
-    
-    //set the delta of each step
-    double latStep = latDiff / steps;
-    double lonStep = lonDiff / steps;
-    double distStep = dist/steps;
-      //printf("steps %d: %f %f %f\n", steps, latStep, lonStep, distStep);
-    
-    int i;
-    double lat = lat1, lon = lon1;
-    float height, lastHeight, eleDiff;
-
-    //get first elevation -> we need eleDiff then
-    height = GetElevation(lat, lon);
-      //printf("first: %f %f hgt:%f\n", lat, lon, height);
-     
-    for(i=0; i<steps; ++i){
-        lat += latStep;
-        lon += lonStep;
-        lastHeight = height;
-        
-        height = GetElevation(lat, lon);
-        eleDiff = height - lastHeight;
-        
-        if(eleDiff > 0){
-            ret.ascent += eleDiff;
-            ret.ascentOn += distStep;
-        }
-        else{
-            ret.descent += -eleDiff;
-            ret.descentOn += distStep;
-        }
-        
-        //printf("LL(%d): %f %f hgt: %0.1f, diff %0.1f\n", i, lat, lon, height, eleDiff);
-    }
-    
-    // printf("last: %f %f\n", i, lat, lon); ==   printf("ll2: %f %f\n", i, lat2, lon2);
-    
-    return ret;
-}
-

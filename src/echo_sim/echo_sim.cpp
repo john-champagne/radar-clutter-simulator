@@ -9,15 +9,9 @@ using std::endl;
 #include <thread>
 #include "echo_sim/echo_sim.h"
 #include "echo_sim/clutter_coefficient.h"
+#include "echo_sim/antenna_pattern.h"
 #include "options.h"
 
-/*EchoSimulator::EchoSimulator() {
-    rangeBinCount     = ceil((1757.0)/(3.3333) + 13);
-	azimuthCount      = 4096;
-	rangeBinPeriod    = 3.333333333E-6;
-	pulseInterval     = 13 * rangeBinPeriod;
-	ERP               = dBmToWatt(86); 
-}*/
 
 EchoSimulator::EchoSimulator(options_t* O){
     Options = O;
@@ -27,7 +21,10 @@ EchoSimulator::EchoSimulator(options_t* O){
     ERP             = Options->SIMULATOR_TRANSMIT_POWER;
     pulseInterval   = Options->SIMULATOR_TRANSMIT_PULSE_LENGTH;
     map = new ElevationMap(O);
-    pattern = new AntennaPatternAnalytical();
+    if (Options->SIMULATOR_ANTENNA_FILENAME == "")
+        pattern = new AntennaPatternAnalytical();
+    else
+        pattern = new AntennaPatternFile(Options->SIMULATOR_ANTENNA_FILENAME);
 }
 
 void EchoSimulator::PopulateAttenTable() {
