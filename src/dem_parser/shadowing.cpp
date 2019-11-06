@@ -21,55 +21,59 @@ void ElevationMap::calculateShadowing() {
     } 
 }
 
-void ElevationMap::calculateShadowingAlongLine(int x, int y) {
+void ElevationMap::calculateShadowingAlongLine(int x1, int y1) {
     int x0 = mapOriginX;
     int y0 = mapOriginY;
     vector<chunk_t*> list;
-    int deltax = x - x0;
-    int deltay = y - y0;
+    int deltax = x1 - x0;
+    int deltay = y1 - y0;
    
     assert(!(deltax == 0 && deltay == 0));
     
     // Lines lies only on the Y axis.
     if (deltax == 0) {
-        for (int y = y0; y != y; y += (deltay > 0 ? 1 : -1))
+        for (int y = y0; y != y1; y += (deltay > 0 ? 1 : -1))
             list.push_back(&map[x0][y]);
-        list.push_back(&map[x][y]);
+        list.push_back(&map[x1][y1]);
     }
     // Line lies only on the X axis.
     else if (deltay == 0) {
-        for (int x = x0; x != x; x += (deltax > 0 ? 1 : -1))
+        for (int x = x0; x != x1; x += (deltax > 0 ? 1 : -1))
             list.push_back(&map[x][y0]);
-        list.push_back(&map[x][y]);
+        list.push_back(&map[x1][y1]);
     }
     // Otherwise, use Bresenham's line algorithm
     else {
-        int dx = abs(x-x0);
-        int sx = x0<x ? 1 : -1;
-        int dy = abs(y-y0);
-        int sy = y0<y ? 1 : -1; 
+        int dx = abs(x1-x0);
+        int sx = x0<x1 ? 1 : -1;
+        int dy = abs(y1-y0);
+        int sy = y0<y1 ? 1 : -1; 
         int err = (dx>dy ? dx : -dy)/2, e2;
  
         for(;;) {
             list.push_back(&map[x0][y0]);
-            if (x0==x && y0==y) break;
+            if (x0==x1 && y0==y1) break;
             e2 = err;
             if (e2 >-dx) { err -= dy; x0 += sx; }
             if (e2 < dy) { err += dx; y0 += sy; }
         } 
     }
-        
+    
+    
     int end = list.size() - 1;
 	for (int i = 0; i <= end; i++) {
         // Find max between 0 and end.
 		int max_i = end;
-		for (int k = 0; k <= end; k++) {
+		for (int k = 0; k <= end; k++) 
 			if (list[k]->el > list[max_i]->el)
 				max_i = k;
-		}
+
+        double max_el = list[max_i]->el;
         // Shadow all chunks from max_i to end.
-		for (int j = max_i + 1; j <= end; j++)
-			list[j]->shadowed = 1;
+		for (int j = max_i+1; j <= end; j++) {
+			if ((max_el - 5 * 3.141592 / 180.0) > list[j]->el)
+                list[j]->shadowed = 1;
+        }
 		end = max_i - 1;
 	}
 }
