@@ -181,6 +181,7 @@ void ElevationMap::calculateSphericalCoordinates(float lat, float lon, float h, 
  *          The start and end points of the map. 
  */
 void ElevationMap::populatePartial(int start, int end) {
+    ElevationReader* E = new ElevationReader(Options);
     // Wait until the first row is allocated.
     while (alloc_i < 1)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -190,7 +191,7 @@ void ElevationMap::populatePartial(int start, int end) {
             float lat, lon;
             calculateLatLon(i, j, &lat, &lon);
             // Load elevation of the point.
-            elevation_map[i][j] = ER->GetElevation(lat, lon);
+            elevation_map[i][j] = E->GetElevation(lat, lon);
             // Calculate spherical coordinates.
             calculateSphericalCoordinates(  lat, 
                                             lon, 
@@ -203,6 +204,7 @@ void ElevationMap::populatePartial(int start, int end) {
         while (i >= alloc_i - 1)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+    delete E;
 }
 
 /*  ElevationMap::allocateMap
