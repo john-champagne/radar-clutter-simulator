@@ -81,7 +81,8 @@ void EchoSimulator::PopulateAttenTablePartial(int start, int end) {
             }
         }
     }
-    cout << ".";
+    if (Options->PROG_VERBOSE)
+        cout << ".";
 }
 
 void EchoSimulator::AllocateAttenTable() {

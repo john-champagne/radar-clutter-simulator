@@ -36,6 +36,7 @@ cxxopts::ParseResult parse(int argc, char* argv[],cxxopts::Options* options ) {
             ("srtm", "SRTM folder", cxxopts::value<std::string>())
             ("antenna-file", "Antenna pattern file", cxxopts::value<std::string>())
             ("threads", "Number of CPU threads", cxxopts::value<int>())
+            ("benchmark", "Benchmark mode. Radius: [start] [step] [end]", cxxopts::value<std::vector<int>>())
             ("o,output", "Output file name", cxxopts::value<std::string>()->default_value("output.atten"))
             ("h,help", "Print help page");
         return options->parse(argc, argv);
@@ -47,8 +48,11 @@ cxxopts::ParseResult parse(int argc, char* argv[],cxxopts::Options* options ) {
 }
 
 int main(int argc, char*argv[]) {
+    using std::cout;
+    using std::endl;
     cxxopts::Options* options = new cxxopts::Options(argv[0], " ");;
     auto result = parse(argc, argv, options);
+    int benchmark[3] = {0,0,0};
     
     options_t O;
     if (!result.count("help")) {
@@ -88,18 +92,37 @@ int main(int argc, char*argv[]) {
             O.SIMULATOR_TRANSMIT_POWER = result["erp"].as<float>();
         if (result.count("antenna-file"))
             O.SIMULATOR_ANTENNA_FILENAME = result["antenna-file"].as<std::string>();
+        if (result.count("benchmark")) {
+            std::vector<int> l = result["benchmark"].as<std::vector<int>>();
+            benchmark[0] = l[0];
+            benchmark[1] = l[1];
+            benchmark[2] = l[2];
+        }
     } else {
         cout << options->help();
         return 1; 
     }
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    EchoSimulator Simulator(&O);
-    Simulator.PopulateAttenTable();
-    Simulator.SaveToFile("output.atten");
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    if (benchmark[0] == 0) {
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        EchoSimulator Simulator(&O);
+        Simulator.PopulateAttenTable();
+        Simulator.SaveToFile("output.atten");
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 
-    std::cout << "Execution time: " << time_span.count() << " seconds.";
-    std::cout << std::endl;
+        std::cout << "Execution time: " << time_span.count() << " seconds.";
+        std::cout << std::endl;
+    } else {
+        for (int radius = benchmark[0]; radius <= benchmark[2]; radius += benchmark[1]) {
+            O.PROG_VERBOSE = 0;
+            O.SIMULATOR_RADIUS = radius;
+            high_resolution_clock::time_point t1 = high_resolution_clock::now();
+            EchoSimulator Simulator(&O);
+            Simulator.PopulateAttenTable();
+            high_resolution_clock::time_point t2 = high_resolution_clock::now();
+            duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+            std::cout << radius << ": " << time_span.count() << std::endl; 
+        }
+    }
 }
 
