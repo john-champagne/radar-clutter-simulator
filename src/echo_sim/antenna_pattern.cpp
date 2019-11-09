@@ -1,8 +1,16 @@
 #include <fstream>
 #include <math.h>
-
+#include <stdio.h>
 #include "echo_sim/antenna_pattern.h"
 
+
+float AntennaPatternAnalytical::angleMax() {
+    return M_PI/4.0;
+}
+
+float AntennaPatternAnalytical::angleMin() {
+    return -1*M_PI/4.0;
+}
 
 float AntennaPatternAnalytical::Gain(float azimuth, float elevation){
     if (azimuth >= -M_PI/2 && azimuth <= M_PI/2)
@@ -21,7 +29,7 @@ AntennaPatternFile::AntennaPatternFile(std::string filename) {
     ifstream input_file(filename, ios::in | ios::binary);
     if (input_file.is_open()) {
         uint8_t file_version = 0;
-        uint32_t sample_number = 0;
+        sample_number = 0;
         input_file.read((char*)(&file_version), 1);
         input_file.read((char*)(&sample_number), 4);
         power = new float[sample_number];
@@ -43,7 +51,15 @@ float AntennaPatternFile::Gain(float azimuth, float elevation) {
     int i = 0;
     while (angle[i] < azimuth)
         i = (i + 1)%sample_number;
-    int i_prev = (i - 1)%sample_number;
+    int i_prev = (i - 1+sample_number)%sample_number;
     return power[i_prev] + (power[i] - power[i_prev]) / (angle[i] - angle[i_prev]) * (azimuth - angle[i_prev]);
-    
+}
+
+
+float AntennaPatternFile::angleMax() {
+    return M_PI/4.0;
+}
+
+float AntennaPatternFile::angleMin() {
+    return -1*M_PI/4.0;
 }
