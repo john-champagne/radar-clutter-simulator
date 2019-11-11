@@ -33,6 +33,7 @@ typedef struct options_t {
     std::string SIMULATOR_OUTPUT_FILENAME = "output.atten";
     std::string SIMULATOR_ANTENNA_FILENAME = "";
 
+    uint8_t     SIMULATOR_SEEK_LOCAL_MAXIMA = 0;
     int8_t      SIMULATOR_THREAD_COUNT = -1; // -1 indicates that the program will decide.
                                              // If you have more than 127 threads:
                                              // First of all, congrats.

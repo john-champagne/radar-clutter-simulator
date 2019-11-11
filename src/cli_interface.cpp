@@ -18,6 +18,7 @@ cxxopts::ParseResult parse(int argc, char* argv[],cxxopts::Options* options ) {
             ("n,lon", "Longitude (degrees)", cxxopts::value<float>())
             ("r,radius", "Radius (meters)", cxxopts::value<float>())
             ("v,verbose", "Verbose mode", cxxopts::value<bool>()->default_value("false"))
+            ("seek-maxima", "Seek local elevation maxima", cxxopts::value<bool>()->default_value("false"))
             ("disable-elevation", "Disable elevation reader", cxxopts::value<bool>()->default_value("false"))
             ("export-azimuth", "Export Azimuth Angles", cxxopts::value<bool>()->default_value("false"))
             ("export-elevation", "Export Elevation Angles", cxxopts::value<bool>()->default_value("false"))  
@@ -64,6 +65,8 @@ int main(int argc, char*argv[]) {
             O.SIMULATOR_RADIUS = result["radius"].as<float>();
         if (result.count("disable-elevation"))
             O.DEM_PARSER_DISABLE_ELEVATION = 1;
+        if (result.count("seek-maxima"))
+            O.SIMULATOR_SEEK_LOCAL_MAXIMA = 1;
         if (result.count("verbose"))
             O.PROG_VERBOSE = 1;
         if (result.count("export-azimuth"))

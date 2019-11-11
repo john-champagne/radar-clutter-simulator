@@ -60,6 +60,7 @@ private:
     
     // The origin lat, lon, and height
     double originLat, originLon, originHeight;
+    void seekMaxima();
 	
     // The origin vector and x,y,z unit vectors.
     ThreeVector origin;

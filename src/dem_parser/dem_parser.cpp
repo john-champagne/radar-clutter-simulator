@@ -26,8 +26,11 @@ using std::endl;
  */
 void ElevationMap::populateMap(){
     ER = new ElevationReader(Options);
+    
+    if (Options->SIMULATOR_SEEK_LOCAL_MAXIMA)
+        seekMaxima();
     originLat = Options->SIMULATOR_ORIGIN_LAT;
-    originLon = Options->SIMULATOR_ORIGIN_LON; 
+    originLon = Options->SIMULATOR_ORIGIN_LON;
     originHeight = ER->GetElevation(originLat,originLon) + Options->SIMULATOR_TRANSMITTER_HEIGHT;
     float radius = Options->SIMULATOR_RADIUS;
 
@@ -104,6 +107,38 @@ void ElevationMap::populateMap(){
     exportMap();
 }
 
+
+void ElevationMap::seekMaxima() {
+    float lat = Options->SIMULATOR_ORIGIN_LAT;
+    float lon = Options->SIMULATOR_ORIGIN_LON;
+    int i = 0;
+    while (true) {
+        float height = ER->GetElevation(lat,lon);
+        float neighbors[4] = {  ER->GetElevation(lat + 0.0005,lon),
+                                ER->GetElevation(lat,lon + 0.0005),
+                                ER->GetElevation(lat - 0.0005,lon),
+                                ER->GetElevation(lat,lon - 0.0005) };
+        float max = height;
+        for (int i = 0; i < 4; i++)
+            if (max < neighbors[i])
+                max = neighbors[i];
+        if (max == height)
+            break;
+        if (max == neighbors[0])
+            lat = lat+0.0005;
+        else if (max == neighbors[1])
+            lon = lon+0.0005;
+        else if (max == neighbors[2])
+            lat = lat-0.0005;
+        else if (max == neighbors[3])
+            lon = lon-0.0005;
+        i++;
+    }
+    if (Options->PROG_VERBOSE)
+        cout << "Found local maxima after " << i << " iterations." << endl;
+    Options->SIMULATOR_ORIGIN_LAT = lat;
+    Options->SIMULATOR_ORIGIN_LON = lon;
+}
 /** ElevationReader::calculateLatLon
  * DESCRIPTION:
  *      Calculates the latitude and longitude for a specific element on the map. 
