@@ -7,18 +7,35 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <thread>
 using std::vector;
 
 void ElevationMap::calculateShadowing() {
-    for (int x = 0; x < mapSizeX; x++) {
-        calculateShadowingAlongLine(x, mapSizeY - 1);
-        calculateShadowingAlongLine(x, 0);
-    }
+    std::thread* threads = new std::thread[threadCount];
+    float mapDelta = float(mapSizeX-1)/float(threadCount);
+    threads[0] = std::thread(   &ElevationMap::calculateShadowingPartial,
+                                this,
+                                0, 
+                                int(mapDelta)
+                            );
+                            
+    for (int i = 1; i < threadCount; i++)
+        threads[i] = std::thread(   &ElevationMap::calculateShadowingPartial,
+                                    this,
+                                    int(mapDelta*i)+1,
+                                    int(mapDelta*(i+1))
+                                );
+    for (int i = 0; i < threadCount; i++)
+        threads[i].join();
+}
 
-    for (int y = 0; y < mapSizeY; y++) {
-        calculateShadowingAlongLine(mapSizeX-1, y);
-        calculateShadowingAlongLine(0, y);
-    } 
+void ElevationMap::calculateShadowingPartial(int start, int end) {
+    for (int i = start; i <= end; i++) {
+        calculateShadowingAlongLine(i, 0);
+        calculateShadowingAlongLine(i, mapSizeY-1);
+        calculateShadowingAlongLine(0, i);
+        calculateShadowingAlongLine(mapSizeX-1, i);
+    }
 }
 
 void ElevationMap::calculateShadowingAlongLine(int x1, int y1) {
@@ -73,7 +90,7 @@ void ElevationMap::calculateShadowingAlongLine(int x1, int y1) {
         // Shadow all chunks from max_i to end.
 		for (int j = max_i+1; j <= end; j++) {
 			if ((max_el - 5 * 3.141592 / 180.0) > list[j]->el)
-                list[j]->shadowed = 1;
+                list[j]->shadowed |= (0x01);
         }
 		end = max_i - 1;
 	}

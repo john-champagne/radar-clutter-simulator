@@ -87,6 +87,7 @@ private:
     
     // Shadowing Calculations
     void calculateShadowing();
+    void calculateShadowingPartial(int start, int end);
     void calculateShadowingAlongLine(int x, int y);
      
     void allocateMap();
