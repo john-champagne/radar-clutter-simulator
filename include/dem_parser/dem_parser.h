@@ -98,7 +98,7 @@ private:
     int alloc_i;
     int elevation_i;
 public:
-    int mapSizeX, mapSizeY;
+    int mapSizeX, mapSizeY, mapRangeMax;
     void populateMap();
 
     // Accessor Functions

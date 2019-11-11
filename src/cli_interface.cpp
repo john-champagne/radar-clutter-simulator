@@ -121,7 +121,7 @@ int main(int argc, char*argv[]) {
             Simulator.PopulateAttenTable();
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-            std::cout << radius << ": " << time_span.count() << std::endl; 
+            std::cout << radius << ", " << time_span.count() << std::endl; 
         }
     }
 }

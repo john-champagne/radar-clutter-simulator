@@ -28,8 +28,6 @@ void ElevationMap::calculateShadowingAlongLine(int x1, int y1) {
     int deltax = x1 - x0;
     int deltay = y1 - y0;
    
-    assert(!(deltax == 0 && deltay == 0));
-    
     // Lines lies only on the Y axis.
     if (deltax == 0) {
         for (int y = y0; y != y1; y += (deltay > 0 ? 1 : -1))
@@ -56,6 +54,9 @@ void ElevationMap::calculateShadowingAlongLine(int x1, int y1) {
             e2 = err;
             if (e2 >-dx) { err -= dy; x0 += sx; }
             if (e2 < dy) { err += dx; y0 += sy; }
+            // Check if the chunk is out of range.
+            if (map[x0][y0].shadowed & (0x01 << 1))
+                break;
         } 
     }
     

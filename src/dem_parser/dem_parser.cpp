@@ -41,6 +41,8 @@ void ElevationMap::populateMap(){
     
     mapSizeX = 2 * radius / deltaDistance;
     mapSizeY = 2 * radius / deltaDistance;
+    mapRangeMax = (int)ceil((double)(mapSizeX)*(1.20/2.0));
+    
     mapOriginX = mapSizeX/2;
     mapOriginY = mapSizeY/2;
     float mapDelta = float(mapSizeX-1)/float(threadCount);
@@ -188,17 +190,48 @@ void ElevationMap::populatePartial(int start, int end) {
     //
     for (int i = 0; i < mapSizeY; i++) {
         for (int j = start; j <= end; j++) {
-            float lat, lon;
-            calculateLatLon(i, j, &lat, &lon);
-            // Load elevation of the point.
-            elevation_map[i][j] = E->GetElevation(lat, lon);
-            // Calculate spherical coordinates.
-            calculateSphericalCoordinates(  lat, 
-                                            lon, 
-                                            elevation_map[i][j], 
-                                            &map[i][j].az, 
-                                            &map[i][j].el, 
-                                            &map[i][j].r);
+            // Calculate approximate distance from the origin using
+            // alpha max + beta min algorithm.
+            short max = j - mapOriginY;
+            short min = i - mapOriginX;
+            
+            // Absolute value.
+            max = max < 0 ? -max : max;
+            min = min < 0 ? -min : min;
+            
+            // Use XOR swap to ensure that max > min.
+            if (min > max) {
+                max = max ^ min;
+                min = min ^ max;
+                max = max ^ min;
+            }
+            
+            // Check if chunk is within the radius.
+            // The (max + (min >> 1)) is an application of
+            // the alpha max beta min algorithm.
+            // See: https://en.wikipedia.org/wiki/Alpha_max_plus_beta_min_algorithm
+            if ((max + (min >> 1)) <= mapRangeMax) {
+                float lat, lon;
+                calculateLatLon(i, j, &lat, &lon);
+                // Load elevation of the point.
+                elevation_map[i][j] = E->GetElevation(lat, lon);
+                // Calculate spherical coordinates.
+                calculateSphericalCoordinates(  lat, 
+                                                lon, 
+                                                elevation_map[i][j], 
+                                                &map[i][j].az, 
+                                                &map[i][j].el, 
+                                                &map[i][j].r);
+            } else {
+                // If the chunk is out of range, assign dummy values
+                // and shadow the chunk.
+                elevation_map[i][j] = Options->SIMULATOR_TRANSMITTER_HEIGHT;
+                map[i][j].az = 0.01;
+                map[i][j].el = 0.01;
+                map[i][j].r = mapRangeMax;
+                map[i][j].shadowed = (0x01 << 1);
+            }
+                                                
         }
         // Wait for the next row to be allocated before continuing.
         while (i >= alloc_i - 1)
