@@ -36,8 +36,7 @@ double inverseHeightMatrix[9][9] = {
  *      double
  *          The directional derivative.
  */
-double ElevationMap::calculateDirectionalDerivative(float* h, float az){return 0;}
-double calculateDirectionalDerivative(float* h, float az) {
+double ElevationMap::calculateDirectionalDerivative(float* h, float az){
 	double b[9];
 	for (int i = 0; i < 9; i++) {
 		b[i] = 0;
