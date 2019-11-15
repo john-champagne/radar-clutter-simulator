@@ -26,6 +26,9 @@ with open(filename, mode='rb') as file:
 
     # Plot contour
     fig, ax = plt.subplots()
-    ax.contourf(ar,200,origin='upper')
+    if f == 'b':
+        ax.contourf(ar,3,vmax=2,vmin=0);
+    else:
+        ax.contourf(ar,200,origin='upper')#,vmax=10*3.1415/180.0,vmin=-10*3.1415/180.0 )
     ax.set_title('Contour Plot')
     plt.show()
